@@ -17,6 +17,7 @@ const debug_flags = &[_][]const u8{
 const testing_flags = &[_][]const u8{
     "-DZIGLIKE_HEADER_TESTING",
     "-DZIGLIKE_USE_FMT",
+    "-DZIGLIKE_NOEXCEPT=", // allow exceptions in testing mode
     "-DFMT_HEADER_ONLY",
     "-I./tests/",
     "-I./include/",

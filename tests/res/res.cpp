@@ -77,7 +77,7 @@ TEST_SUITE("res")
         {
             using res = res<int, StatusCodeB>;
             res result(StatusCodeB::Nothing);
-            REQUIREABORTS(result.release());
+            REQUIREABORTS({ auto nothing = result.release(); });
         }
 
         SUBCASE("Result released code after release is called")
@@ -148,7 +148,7 @@ TEST_SUITE("res")
             };
 
             REQUIRE(!makeveciftrue(false).okay());
-            REQUIREABORTS(makeveciftrue(false).release());
+            REQUIREABORTS({ auto nothing = makeveciftrue(false).release(); });
 
             res result = makeveciftrue(true);
             REQUIRE(result.okay());
@@ -181,7 +181,7 @@ TEST_SUITE("res")
             };
 
             REQUIRE(!makeveciftrue(false).okay());
-            REQUIREABORTS(makeveciftrue(false).release());
+            REQUIREABORTS({ auto nothing = makeveciftrue(false).release(); });
 
             res result = makeveciftrue(true);
             REQUIRE(result.okay());
@@ -264,7 +264,7 @@ TEST_SUITE("res")
             REQUIRE(moves == 2);
             REQUIRE(copies == 0);
             REQUIRE(res_2.okay());
-            REQUIREABORTS(res_1.release()); // NOLINT
+            REQUIREABORTS({ auto nothing = res_1.release(); });
             increment_on_copy_or_move dummy_2 = res_2.release();
             // moves incremented because release() moves the item out of the
             // result
