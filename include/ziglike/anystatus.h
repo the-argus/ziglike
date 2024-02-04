@@ -4,6 +4,10 @@
 #include <cstdint>
 #include <type_traits>
 
+#ifndef ZIGLIKE_NOEXCEPT
+#define ZIGLIKE_NOEXCEPT noexcept
+#endif
+
 namespace zl {
 struct anystatus
 {
@@ -11,12 +15,12 @@ struct anystatus
     uint8_t m_status;
 
   public:
-    [[nodiscard]] inline constexpr bool okay() const noexcept
+    [[nodiscard]] inline constexpr bool okay() const ZIGLIKE_NOEXCEPT
     {
         return m_status == 0;
     }
 
-    [[nodiscard]] inline constexpr uint8_t err() const noexcept
+    [[nodiscard]] inline constexpr uint8_t err() const ZIGLIKE_NOEXCEPT
     {
         return m_status;
     }
@@ -24,7 +28,7 @@ struct anystatus
     /// Can be constructed from a result, discarding the contents of the result
     /// and basically just storing the byte error code.
     template <typename T, typename Code>
-    inline constexpr anystatus(const res<T, Code> &result) noexcept
+    inline constexpr anystatus(const res<T, Code> &result) ZIGLIKE_NOEXCEPT
     {
         m_status = uint8_t(result.err());
     }
@@ -32,7 +36,7 @@ struct anystatus
     /// Can be constructed from a status, removing the type information of the
     /// status.
     template <typename Code>
-    inline constexpr anystatus(status<Code> status) noexcept
+    inline constexpr anystatus(status<Code> status) ZIGLIKE_NOEXCEPT
     {
         m_status = uint8_t(status.err());
     }
@@ -48,14 +52,14 @@ struct anystatus
                      Code::ResultReleased) !=
                  typename std::underlying_type<Code>::type(Code::Okay)),
             Code>
-            status) noexcept
+            status) ZIGLIKE_NOEXCEPT
     {
         m_status = uint8_t(status);
     }
 
     /// Can be implicitly constructed from a bool, true being okay and false
     /// being not
-    inline constexpr anystatus(bool status) noexcept
+    inline constexpr anystatus(bool status) ZIGLIKE_NOEXCEPT
         : m_status(status ? 0 : 255)
     {
     }

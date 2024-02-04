@@ -59,11 +59,11 @@ TEST_SUITE("res")
 #ifdef ZIGLIKE_USE_FMT
         SUBCASE("formattable")
         {
-            using result = res<int, StatusCodeB>;
-            using refresult = res<int &, StatusCodeB>;
-            result result(10);
+            using result_t = res<int, StatusCodeB>;
+            using refresult_t = res<int &, StatusCodeB>;
+            result_t result(10);
             int target = 10;
-            refresult refresult(target);
+            refresult_t refresult(target);
             fmt::println("Result int: {}", result);
             fmt::println("Reference result int: {}", refresult);
             auto unused = result.release();

@@ -8,6 +8,10 @@
 #include <fmt/core.h>
 #endif
 
+#ifndef ZIGLIKE_NOEXCEPT
+#define ZIGLIKE_NOEXCEPT noexcept
+#endif
+
 namespace zl {
 /// A result which is either a type T or a status code about why failure
 /// occurred. StatusCode must be an 8-bit enum with an entry called "Okay"
@@ -43,7 +47,7 @@ template <typename T, typename StatusCode> class res
     {
         T item;
         wrapper() = delete;
-        inline constexpr wrapper(T item) noexcept : item(item){};
+        inline constexpr wrapper(T item) ZIGLIKE_NOEXCEPT : item(item){};
     };
 
     static constexpr bool is_reference = std::is_lvalue_reference<T>::value;
@@ -52,7 +56,7 @@ template <typename T, typename StatusCode> class res
     {
         typename std::conditional<is_reference, wrapper, T>::type some;
         uint8_t none;
-        ~raw_optional() noexcept {}
+        ~raw_optional() ZIGLIKE_NOEXCEPT {}
     };
 
     // keeps track of the status. if it is StatusCode::Okay, then we have
@@ -65,12 +69,12 @@ template <typename T, typename StatusCode> class res
     using err_type = StatusCode;
 
     /// Returns true if it is safe to call release(), otherwise false.
-    [[nodiscard]] inline constexpr bool okay() const noexcept
+    [[nodiscard]] inline constexpr bool okay() const ZIGLIKE_NOEXCEPT
     {
         return m_status == StatusCode::Okay;
     }
 
-    [[nodiscard]] inline constexpr StatusCode err() const noexcept
+    [[nodiscard]] inline constexpr StatusCode err() const ZIGLIKE_NOEXCEPT
     {
         return m_status;
     }
@@ -79,7 +83,7 @@ template <typename T, typename StatusCode> class res
     /// an error, this aborts the program. Check okay() before calling this
     /// function.
     [[nodiscard]] inline typename std::conditional<is_reference, T, T &&>::type
-    release() noexcept
+    release() ZIGLIKE_NOEXCEPT
     {
         if (!okay()) [[unlikely]] {
             ZIGLIKE_ABORT();
@@ -98,8 +102,8 @@ template <typename T, typename StatusCode> class res
     /// function. Do not try to call release() or release_ref() again, after
     /// calling release() or release_ref() once, the result is invalidated.
     template <typename MaybeT = T>
-    [[nodiscard]] inline typename std::enable_if_t<!is_reference, MaybeT> &
-    release_ref() &noexcept
+        [[nodiscard]] inline typename std::enable_if_t<!is_reference, MaybeT>
+            &release_ref() & ZIGLIKE_NOEXCEPT
     {
         if (!okay()) [[unlikely]] {
             ZIGLIKE_ABORT();
@@ -109,7 +113,7 @@ template <typename T, typename StatusCode> class res
     }
 
     /// Cannot call release_ref on an rvalue result
-    // T &release_ref() && noexcept requires(!is_reference) = delete;
+    // T &release_ref() && ZIGLIKE_NOEXCEPT requires(!is_reference) = delete;
 
     /// Can construct a T directly into the result, if the result doesn't
     /// contain a reference type.
@@ -118,7 +122,7 @@ template <typename T, typename StatusCode> class res
         !is_reference && std::is_constructible_v<T, Args...> &&
             std::is_same_v<ThisType, res>,
         ThisType> &&
-    construct_into(Args &&...args) noexcept
+    construct_into(Args &&...args) ZIGLIKE_NOEXCEPT
     {
         res empty;
         new (&empty.m_value.some) T(std::forward<decltype(args)>(args)...);
@@ -128,8 +132,8 @@ template <typename T, typename StatusCode> class res
 
     /// if T is a reference type, then you can construct a result from it
     template <typename MaybeT = T>
-    inline constexpr res(
-        typename std::enable_if_t<is_reference, MaybeT> success) noexcept
+    inline constexpr res(typename std::enable_if_t<is_reference, MaybeT>
+                             success) ZIGLIKE_NOEXCEPT
     {
         m_status = StatusCode::Okay;
         new (&m_value.some) wrapper(success);
@@ -137,8 +141,8 @@ template <typename T, typename StatusCode> class res
 
     /// Wrapped type can moved into a result
     template <typename MaybeT = T>
-    inline constexpr res(
-        typename std::enable_if_t<!is_reference, MaybeT> &&success) noexcept
+    inline constexpr res(typename std::enable_if_t<!is_reference, MaybeT>
+                             &&success) ZIGLIKE_NOEXCEPT
     {
         static_assert(std::is_move_constructible_v<T>,
                       "Attempt to move a type T into a result but it's not "
@@ -148,7 +152,7 @@ template <typename T, typename StatusCode> class res
     }
 
     /// A statuscode can also be implicitly converted to a result
-    inline constexpr res(StatusCode failure) noexcept
+    inline constexpr res(StatusCode failure) ZIGLIKE_NOEXCEPT
     {
         if (failure == StatusCode::Okay) [[unlikely]] {
             ZIGLIKE_ABORT();
@@ -163,7 +167,7 @@ template <typename T, typename StatusCode> class res
         const typename std::enable_if_t<(is_reference ||
                                          std::is_trivially_copy_constructible_v<
                                              T>)&&std::is_same_v<ThisType, res>,
-                                        ThisType> &other) noexcept
+                                        ThisType> &other) ZIGLIKE_NOEXCEPT
     {
         if (&other == this) [[unlikely]]
             return *this;
@@ -189,7 +193,7 @@ template <typename T, typename StatusCode> class res
         typename std::enable_if_t<
             (is_reference ||
              std::is_move_constructible_v<T>)&&std::is_same_v<ThisType, res>,
-            ThisType> &&other) noexcept
+            ThisType> &&other) ZIGLIKE_NOEXCEPT
     {
         if (&other == this) [[unlikely]]
             return *this;
@@ -207,7 +211,7 @@ template <typename T, typename StatusCode> class res
         return *this;
     }
 
-    inline ~res() noexcept
+    inline ~res() ZIGLIKE_NOEXCEPT
     {
         if constexpr (!is_reference) {
             // always call the destructor of the thing if it was emplaced
@@ -223,7 +227,10 @@ template <typename T, typename StatusCode> class res
 #endif
 
   private:
-    inline constexpr explicit res() noexcept { m_status = StatusCode::Okay; }
+    inline constexpr explicit res() ZIGLIKE_NOEXCEPT
+    {
+        m_status = StatusCode::Okay;
+    }
 };
 } // namespace zl
 

@@ -9,6 +9,10 @@
 #include <fmt/core.h>
 #endif
 
+#ifndef ZIGLIKE_NOEXCEPT
+#define ZIGLIKE_NOEXCEPT noexcept
+#endif
+
 namespace zl {
 /// Optional (nullable) type. Accepts basic types, pointers, structs, etc, or
 /// lvalue references.
@@ -36,19 +40,22 @@ template <typename T> class opt
     {
         typename std::conditional<is_reference, wrapper, T>::type some;
         uint8_t none;
-        inline ~raw_optional() noexcept {}
+        inline ~raw_optional() ZIGLIKE_NOEXCEPT {}
     };
     bool m_has_value = false;
     raw_optional m_value{.none = 0};
 
   public:
     /// Returns true if its safe to call value(), false otherwise.
-    [[nodiscard]] inline bool has_value() const noexcept { return m_has_value; }
+    [[nodiscard]] inline bool has_value() const ZIGLIKE_NOEXCEPT
+    {
+        return m_has_value;
+    }
 
     /// Extract the inner value of the optional, or abort the program. Check
     /// has_value() before calling this.
     [[nodiscard]] inline typename std::conditional<is_reference, T, T &>::type
-    value() noexcept
+    value() ZIGLIKE_NOEXCEPT
     {
         if (!m_has_value) [[unlikely]] {
             ZIGLIKE_ABORT();
@@ -61,7 +68,7 @@ template <typename T> class opt
     }
 
     inline typename std::conditional<is_reference, const T, const T &>::type
-    value_const() const noexcept
+    value_const() const ZIGLIKE_NOEXCEPT
     {
         if (!m_has_value) [[unlikely]] {
             ZIGLIKE_ABORT();
@@ -76,20 +83,13 @@ template <typename T> class opt
     /// Extract the inner value of the optional, or abort the program. Check
     /// has_value() before calling this.
     inline typename std::conditional<is_reference, const T, const T &>::type
-    value() const noexcept
+    value() const ZIGLIKE_NOEXCEPT
     {
-        if (!m_has_value) [[unlikely]] {
-            ZIGLIKE_ABORT();
-        }
-        if constexpr (is_reference) {
-            return m_value.some.item;
-        } else {
-            return std::ref(m_value.some);
-        }
+        return value_const();
     }
 
     /// Non reference types can have their destructors explicitly called
-    inline void reset() noexcept
+    inline void reset() ZIGLIKE_NOEXCEPT
     {
         if (!has_value()) [[unlikely]] {
             return;
@@ -101,7 +101,8 @@ template <typename T> class opt
     }
 
     /// Non-reference types can be constructed directly in to the optional
-    template <typename... Args> inline void emplace(Args &&...args) noexcept
+    template <typename... Args>
+    inline void emplace(Args &&...args) ZIGLIKE_NOEXCEPT
     {
         static_assert(
             !is_reference,
@@ -116,10 +117,13 @@ template <typename T> class opt
     }
 
     /// Contextually convertible to bool
-    inline constexpr operator bool() const noexcept { return m_has_value; }
+    inline constexpr operator bool() const ZIGLIKE_NOEXCEPT
+    {
+        return m_has_value;
+    }
 
-    inline constexpr opt() noexcept {}
-    inline ~opt() noexcept
+    inline constexpr opt() ZIGLIKE_NOEXCEPT {}
+    inline ~opt() ZIGLIKE_NOEXCEPT
     {
         if constexpr (!is_reference) {
             reset();
@@ -132,7 +136,7 @@ template <typename T> class opt
     inline constexpr opt &
     operator=(typename std::enable_if_t<
               !is_reference && std::is_constructible_v<MaybeT, MaybeT &&>,
-              MaybeT> &&something) noexcept
+              MaybeT> &&something) ZIGLIKE_NOEXCEPT
     {
         if (m_has_value) {
             m_value.some.~MaybeT();
@@ -146,7 +150,7 @@ template <typename T> class opt
     inline constexpr opt(
         typename std::enable_if_t<
             !is_reference && std::is_constructible_v<MaybeT, MaybeT &&>, MaybeT>
-            &&something) noexcept
+            &&something) ZIGLIKE_NOEXCEPT
     {
         new (&m_value.some) MaybeT(std::move(something));
         m_has_value = true;
@@ -158,7 +162,7 @@ template <typename T> class opt
     operator=(const typename std::enable_if_t<
               !is_reference &&
                   std::is_trivially_constructible_v<MaybeT, const MaybeT &>,
-              MaybeT> &something) noexcept
+              MaybeT> &something) ZIGLIKE_NOEXCEPT
     {
         if (m_has_value) {
             m_value.some.~MaybeT();
@@ -173,7 +177,7 @@ template <typename T> class opt
         const typename std::enable_if_t<
             !is_reference &&
                 std::is_trivially_constructible_v<MaybeT, const MaybeT &>,
-            MaybeT> &something) noexcept
+            MaybeT> &something) ZIGLIKE_NOEXCEPT
     {
         new (&m_value.some) T(something);
         m_has_value = true;
@@ -182,8 +186,8 @@ template <typename T> class opt
     /// Optional containing a reference type can be directly constructed from
     /// the reference type
     template <typename MaybeT = T>
-    inline constexpr opt(
-        typename std::enable_if_t<is_reference, MaybeT> something) noexcept
+    inline constexpr opt(typename std::enable_if_t<is_reference, MaybeT>
+                             something) ZIGLIKE_NOEXCEPT
     {
         new (&m_value.some) wrapper(something);
         m_has_value = true;
@@ -191,8 +195,9 @@ template <typename T> class opt
 
     /// Reference types can be assigned to an optional to overwrite it.
     template <typename MaybeT = T>
-    inline constexpr opt &operator=(
-        typename std::enable_if_t<is_reference, MaybeT> something) noexcept
+    inline constexpr opt &
+    operator=(typename std::enable_if_t<is_reference, MaybeT> something)
+        ZIGLIKE_NOEXCEPT
     {
         // no need to destroy the potentially existing reference since
         // references dont have destructors
@@ -202,13 +207,14 @@ template <typename T> class opt
     }
 
     /// Comparable to non-optional versions of the same type, only if not a
-    /// reference. NOTE: References are not able to use the == overload because
+    /// reference.
+    /// NOTE: References are not able to use the == overload because
     /// it would not be clear whether it was a strict comparison or not. (ie is
     /// it comparing the address or the contents of the thing at the address?)
     template <typename MaybeT = T>
-    inline constexpr bool
-    operator==(const typename std::enable_if_t<!is_reference, MaybeT>
-                   &something) noexcept
+    inline constexpr bool operator==(
+        const typename std::enable_if_t<!is_reference, MaybeT> &something)
+        ZIGLIKE_NOEXCEPT
     {
         if (!has_value())
             return false;

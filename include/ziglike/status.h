@@ -1,6 +1,10 @@
 #pragma once
 #include <type_traits>
 
+#ifndef ZIGLIKE_NOEXCEPT
+#define ZIGLIKE_NOEXCEPT noexcept
+#endif
+
 namespace zl {
 /// Wrapper around a errcode to give it a similar interface to a result_t.
 template <typename Errcode> struct status
@@ -19,14 +23,17 @@ template <typename Errcode> struct status
     Errcode m_status;
 
   public:
-    [[nodiscard]] inline constexpr bool okay() const noexcept
+    [[nodiscard]] inline constexpr bool okay() const ZIGLIKE_NOEXCEPT
     {
         return m_status == Errcode::Okay;
     }
-    [[nodiscard]] inline constexpr Errcode err() const noexcept
+    [[nodiscard]] inline constexpr Errcode err() const ZIGLIKE_NOEXCEPT
     {
         return m_status;
     }
-    inline constexpr status(Errcode failure) noexcept { m_status = failure; }
+    inline constexpr status(Errcode failure) ZIGLIKE_NOEXCEPT
+    {
+        m_status = failure;
+    }
 };
 } // namespace zl
