@@ -5,6 +5,9 @@
 
 using namespace zl;
 
+static_assert(std::is_same_v<slice<const uint8_t>::type, const uint8_t>,
+              "slice::type doesnt work as expected");
+
 TEST_SUITE("slice")
 {
     TEST_CASE("Construction and type behavior")

@@ -2,13 +2,17 @@
 // test header must be first
 #include "testing_types.h"
 #include "ziglike/opt.h"
+#include "ziglike/slice.h"
 
 using namespace zl;
 
 #ifndef ZIGLIKE_NO_SMALL_OPTIONAL_SLICE
+static_assert(sizeof(opt<slice<int>>) == sizeof(slice<int>),
+              "Optional slice types are a different size than slices");
+#endif
+
 static_assert(sizeof(opt<int &>) == sizeof(int *),
               "Optional reference types are a different size than pointers");
-#endif
 
 TEST_SUITE("opt")
 {
@@ -115,6 +119,35 @@ TEST_SUITE("opt")
             REQUIRE(!testref.strict_compare(test2));
         }
 
+        SUBCASE("emplace")
+        {
+            opt<std::vector<int>> mvec;
+            REQUIRE(!mvec.has_value());
+            mvec.emplace();
+            REQUIRE(mvec.has_value());
+        }
+
+#ifndef ZIGLIKE_NO_SMALL_OPTIONAL_SLICE
+        SUBCASE("emplace slice types")
+        {
+            std::array<uint8_t, 128> bytes{0};
+            uint8_t index = 0;
+            for (auto &byte : bytes) {
+                byte = index;
+                ++index;
+            }
+
+            opt<slice<uint8_t>> maybe_bytes;
+            maybe_bytes.emplace(bytes);
+
+            index = 0;
+            for (auto byte : maybe_bytes.value()) {
+                REQUIRE(byte == bytes[index]);
+                ++index;
+            }
+        }
+#endif
+
         SUBCASE("moving or copying trivially copyable type")
         {
             struct thing
@@ -132,6 +165,17 @@ TEST_SUITE("opt")
             REQUIRE(maybe_copyguy_moved.has_value());
         }
 
+        SUBCASE("copying slice")
+        {
+            std::array<uint8_t, 128> bytes;
+            opt<slice<uint8_t>> maybe_bytes(bytes);
+
+            opt<slice<uint8_t>> other_maybe_bytes(maybe_bytes);
+            REQUIRE(other_maybe_bytes == maybe_bytes);
+
+            slice<uint8_t> bytes_slice = other_maybe_bytes.value();
+        }
+
 #ifdef ZIGLIKE_USE_FMT
         SUBCASE("formattable")
         {
@@ -146,6 +190,11 @@ TEST_SUITE("opt")
             fmt::println("optional reference string BEFORE: {}", refstr);
             refstr.reset();
             fmt::println("optional reference string AFTER: {}", refstr);
+
+            std::array<uint8_t, 128> bytes;
+            opt<slice<uint8_t>> maybe_bytes;
+            maybe_bytes.emplace(bytes);
+            fmt::println("optional slice: {}", maybe_bytes);
         }
 #endif
     }

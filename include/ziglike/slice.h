@@ -28,6 +28,8 @@ template <typename T>
 template <typename T> class slice
 {
   private:
+    // NOTE: opt may rely on the layout of these items, changing order may cause
+    // UB
     size_t m_elements;
     T *m_data;
 
@@ -66,8 +68,7 @@ template <typename T> class slice
 #endif
 
     // raw access to contents
-    [[nodiscard]] inline constexpr T *data() ZIGLIKE_NOEXCEPT { return m_data; }
-    [[nodiscard]] inline constexpr const T *data() const ZIGLIKE_NOEXCEPT
+    [[nodiscard]] inline constexpr T *data() const ZIGLIKE_NOEXCEPT
     {
         return m_data;
     }
@@ -239,7 +240,7 @@ template <typename T> class slice
     friend constexpr inline slice zl::raw_slice(T &data,
                                                 size_t size) ZIGLIKE_NOEXCEPT;
 #ifdef ZIGLIKE_USE_FMT
-    // friend struct fmt::formatter<slice>;
+    friend struct fmt::formatter<slice>;
 #endif
 };
 
