@@ -13,7 +13,7 @@
 #define ZIGLIKE_NOEXCEPT noexcept
 #endif
 
-#ifndef ZIGLIKE_NO_SMALL_OPTIONAL_REFERENCE
+#ifndef ZIGLIKE_NO_SMALL_OPTIONAL_SLICE
 #include "./detail/isinstance.h"
 #include "./slice.h"
 #endif
@@ -39,7 +39,7 @@ template <typename T> class opt
 
     static constexpr bool is_reference = std::is_lvalue_reference<T>::value;
 
-#ifndef ZIGLIKE_NO_SMALL_OPTIONAL_REFERENCE
+#ifndef ZIGLIKE_NO_SMALL_OPTIONAL_SLICE
     static constexpr bool is_slice = zl::detail::is_instance<T, zl::slice>{};
 #endif
 

@@ -5,7 +5,7 @@
 
 using namespace zl;
 
-#ifndef ZIGLIKE_NO_SMALL_OPTIONAL_REFERENCE
+#ifndef ZIGLIKE_NO_SMALL_OPTIONAL_SLICE
 static_assert(sizeof(opt<int &>) == sizeof(int *),
               "Optional reference types are a different size than pointers");
 #endif
