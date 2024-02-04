@@ -17,7 +17,7 @@ TEST_SUITE("opt")
         SUBCASE("Default construction")
         {
             opt<int> def;
-            REQUIRE(!def);
+            REQUIRE(!def.has_value());
             REQUIRE(def != 0);
         }
 
@@ -57,9 +57,9 @@ TEST_SUITE("opt")
         SUBCASE("convertible to bool")
         {
             opt<int> nothing;
-            REQUIRE(!nothing);
+            REQUIRE(!nothing.has_value());
             opt<int> something = 1;
-            REQUIRE(something);
+            REQUIRE(something.has_value());
         }
     }
 
@@ -95,6 +95,24 @@ TEST_SUITE("opt")
             // opt<moveable_t> maybe_moveguy = moveguy;
 
             REQUIRE(strcmp(maybe_moveguy.value().nothing, "nope") == 0);
+        }
+
+        SUBCASE("optional reference types")
+        {
+            int test = 10;
+            opt<int &> testref;
+            opt<int &> testref2;
+            REQUIRE(!testref.has_value());
+            REQUIRE(!testref2.has_value());
+            testref = test;
+            REQUIRE(testref.value() == test);
+            REQUIRE(testref.strict_compare(test));
+            REQUIRE(testref.loose_compare(test));
+
+            // difference between loose and strict comparison
+            int test2 = 10;
+            REQUIRE(testref.loose_compare(test2));
+            REQUIRE(!testref.strict_compare(test2));
         }
 
         SUBCASE("moving or copying trivially copyable type")

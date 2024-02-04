@@ -147,12 +147,6 @@ template <typename T> class opt
         }
     }
 
-    /// Contextually convertible to bool
-    inline constexpr operator bool() const ZIGLIKE_NOEXCEPT
-    {
-        return has_value();
-    }
-
     inline constexpr opt() ZIGLIKE_NOEXCEPT {}
     inline ~opt() ZIGLIKE_NOEXCEPT
     {
@@ -223,7 +217,7 @@ template <typename T> class opt
     inline constexpr opt(typename std::enable_if_t<is_reference, MaybeT>
                              something) ZIGLIKE_NOEXCEPT
     {
-        m.pointer = &something;
+        m.pointer = std::addressof(something);
     }
 
     /// Reference types can be assigned to an optional to overwrite it.
@@ -282,10 +276,46 @@ template <typename T> class opt
     /// NOT EQUALS: Compare an optional to something of its contained type
     template <typename MaybeT = T>
     inline constexpr bool operator!=(
-        const std::enable_if_t<!opt<MaybeT>::is_reference, MaybeT> &other)
-        ZIGLIKE_NOEXCEPT
+        const std::enable_if_t<!is_reference, MaybeT> &other) ZIGLIKE_NOEXCEPT
     {
         return !has_value() ? true : m.value.some != other;
+    }
+
+    // Strict comparison for an optional reference: return true if the optional
+    // reference is pointing at the item passed in.
+    /// ONLY VALID FOR REFERENCE-TYPE OPTIONALS
+    template <typename OtherType = T>
+    inline constexpr bool strict_compare(
+        const std::enable_if_t<is_reference && (std::is_same_v<OtherType, T> ||
+                                                std::is_same_v<OtherType, opt>),
+                               OtherType> &other) ZIGLIKE_NOEXCEPT
+    {
+        if constexpr (std::is_same_v<OtherType, T>) {
+            if (!has_value())
+                return false;
+            return std::addressof(other) == m.pointer;
+        } else {
+            return other.m.pointer == m.pointer;
+        }
+    }
+
+    /// Loose comparison: compare the thing the optional reference is pointing
+    /// to to the item passed in. They do not have to literally be the same
+    /// object.
+    /// ONLY VALID FOR REFERENCE-TYPE OPTIONALS
+    template <typename OtherType = T>
+    inline constexpr bool loose_compare(
+        const std::enable_if_t<is_reference && (std::is_same_v<OtherType, T> ||
+                                                std::is_same_v<OtherType, opt>),
+                               OtherType> &other) ZIGLIKE_NOEXCEPT
+    {
+        if constexpr (std::is_same_v<OtherType, T>) {
+            if (!has_value())
+                return false;
+            return other == *m.pointer;
+        } else {
+            return *other.m.pointer == *m.pointer;
+        }
     }
 
 #ifdef ZIGLIKE_USE_FMT
