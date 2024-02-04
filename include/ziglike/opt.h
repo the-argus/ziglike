@@ -13,6 +13,11 @@
 #define ZIGLIKE_NOEXCEPT noexcept
 #endif
 
+#ifndef ZIGLIKE_NO_SMALL_OPTIONAL_REFERENCE
+#include "./detail/isinstance.h"
+#include "./slice.h"
+#endif
+
 namespace zl {
 /// Optional (nullable) type. Accepts basic types, pointers, structs, etc, or
 /// lvalue references.
@@ -26,30 +31,51 @@ template <typename T> class opt
                   "Optional type must be either nothrow destructible or an "
                   "lvalue reference type.");
 
+#ifndef ZIGLIKE_OPTIONAL_ALLOW_POINTERS
+    static_assert(!std::is_pointer_v<T>,
+                  "Attempt to create an optional pointer. Pointers are already "
+                  "optional. Maybe make an optional reference instead?");
+#endif
+
     static constexpr bool is_reference = std::is_lvalue_reference<T>::value;
 
-  private:
-    struct wrapper
-    {
-        T item;
-        wrapper() = delete;
-        inline constexpr wrapper(T item) : item(item){};
-    };
+#ifndef ZIGLIKE_NO_SMALL_OPTIONAL_REFERENCE
+    static constexpr bool is_slice = zl::detail::is_instance<T, zl::slice>{};
+#endif
 
+  private:
     union raw_optional
     {
-        typename std::conditional<is_reference, wrapper, T>::type some;
+        T some;
         uint8_t none;
         inline ~raw_optional() ZIGLIKE_NOEXCEPT {}
     };
-    bool m_has_value = false;
-    raw_optional m_value{.none = 0};
+
+    struct members
+    {
+        bool has_value = false;
+        raw_optional value{.none = 0};
+    };
+
+    struct members_ref
+    {
+        std::remove_reference_t<T> *pointer = nullptr;
+    };
+
+    using members_t =
+        typename std::conditional<is_reference, members_ref, members>::type;
+
+    members_t m;
 
   public:
     /// Returns true if its safe to call value(), false otherwise.
     [[nodiscard]] inline bool has_value() const ZIGLIKE_NOEXCEPT
     {
-        return m_has_value;
+        if constexpr (is_reference) {
+            return m.pointer != nullptr;
+        } else {
+            return m.has_value;
+        }
     }
 
     /// Extract the inner value of the optional, or abort the program. Check
@@ -57,26 +83,26 @@ template <typename T> class opt
     [[nodiscard]] inline typename std::conditional<is_reference, T, T &>::type
     value() ZIGLIKE_NOEXCEPT
     {
-        if (!m_has_value) [[unlikely]] {
+        if (!has_value()) [[unlikely]] {
             ZIGLIKE_ABORT();
         }
         if constexpr (is_reference) {
-            return m_value.some.item;
+            return *m.pointer;
         } else {
-            return std::ref(m_value.some);
+            return std::ref(m.value.some);
         }
     }
 
     inline typename std::conditional<is_reference, const T, const T &>::type
     value_const() const ZIGLIKE_NOEXCEPT
     {
-        if (!m_has_value) [[unlikely]] {
+        if (!has_value()) [[unlikely]] {
             ZIGLIKE_ABORT();
         }
         if constexpr (is_reference) {
-            return m_value.some.item;
+            return *m.pointer;
         } else {
-            return std::ref(m_value.some);
+            return std::ref(m.value.some);
         }
     }
 
@@ -88,16 +114,19 @@ template <typename T> class opt
         return value_const();
     }
 
-    /// Non reference types can have their destructors explicitly called
+    /// Call destructor of internal type, or just reset it if it doesnt have one
     inline void reset() ZIGLIKE_NOEXCEPT
     {
         if (!has_value()) [[unlikely]] {
             return;
         }
+
         if constexpr (!is_reference) {
-            m_value.some.~T();
+            m.value.some.~T();
+            m.has_value = false;
+        } else {
+            m.pointer = nullptr;
         }
-        m_has_value = false;
     }
 
     /// Non-reference types can be constructed directly in to the optional
@@ -107,19 +136,21 @@ template <typename T> class opt
         static_assert(
             !is_reference,
             "emplace() cannot be called on reference-type optionals.");
-        if (has_value()) [[unlikely]] {
-            reset();
+        if (!is_reference) {
+            if (has_value()) [[unlikely]] {
+                reset();
+            }
+            static_assert(std::is_constructible_v<T, decltype(args)...>,
+                          "Type T is not constructible with given arguments");
+            new (&m.value.some) T(std::forward<decltype(args)>(args)...);
+            m.has_value = true;
         }
-        static_assert(std::is_constructible_v<T, decltype(args)...>,
-                      "Type T is not constructible with given arguments");
-        new (&m_value.some) T(std::forward<decltype(args)>(args)...);
-        m_has_value = true;
     }
 
     /// Contextually convertible to bool
     inline constexpr operator bool() const ZIGLIKE_NOEXCEPT
     {
-        return m_has_value;
+        return has_value();
     }
 
     inline constexpr opt() ZIGLIKE_NOEXCEPT {}
@@ -127,8 +158,10 @@ template <typename T> class opt
     {
         if constexpr (!is_reference) {
             reset();
+            m.has_value = false;
+        } else {
+            m.pointer = nullptr;
         }
-        m_has_value = false;
     }
 
     /// Able to assign a moved type if the type is moveable
@@ -138,11 +171,11 @@ template <typename T> class opt
               !is_reference && std::is_constructible_v<MaybeT, MaybeT &&>,
               MaybeT> &&something) ZIGLIKE_NOEXCEPT
     {
-        if (m_has_value) {
-            m_value.some.~MaybeT();
+        if (m.has_value) {
+            m.value.some.~MaybeT();
         }
-        new (&m_value.some) MaybeT(std::move(something));
-        m_has_value = true;
+        new (&m.value.some) MaybeT(std::move(something));
+        m.has_value = true;
         return *this;
     }
 
@@ -152,8 +185,8 @@ template <typename T> class opt
             !is_reference && std::is_constructible_v<MaybeT, MaybeT &&>, MaybeT>
             &&something) ZIGLIKE_NOEXCEPT
     {
-        new (&m_value.some) MaybeT(std::move(something));
-        m_has_value = true;
+        new (&m.value.some) MaybeT(std::move(something));
+        m.has_value = true;
     }
 
     /// Trivially copyable types can also be assigned into their optionals
@@ -164,14 +197,15 @@ template <typename T> class opt
                   std::is_trivially_constructible_v<MaybeT, const MaybeT &>,
               MaybeT> &something) ZIGLIKE_NOEXCEPT
     {
-        if (m_has_value) {
-            m_value.some.~MaybeT();
+        if (m.has_value) {
+            m.value.some.~MaybeT();
         }
-        new (&m_value.some) MaybeT(something);
-        m_has_value = true;
+        new (&m.value.some) MaybeT(something);
+        m.has_value = true;
         return *this;
     }
 
+    // copy constructor
     template <typename MaybeT = T>
     inline constexpr opt(
         const typename std::enable_if_t<
@@ -179,8 +213,8 @@ template <typename T> class opt
                 std::is_trivially_constructible_v<MaybeT, const MaybeT &>,
             MaybeT> &something) ZIGLIKE_NOEXCEPT
     {
-        new (&m_value.some) T(something);
-        m_has_value = true;
+        new (&m.value.some) T(something);
+        m.has_value = true;
     }
 
     /// Optional containing a reference type can be directly constructed from
@@ -189,8 +223,7 @@ template <typename T> class opt
     inline constexpr opt(typename std::enable_if_t<is_reference, MaybeT>
                              something) ZIGLIKE_NOEXCEPT
     {
-        new (&m_value.some) wrapper(something);
-        m_has_value = true;
+        m.pointer = &something;
     }
 
     /// Reference types can be assigned to an optional to overwrite it.
@@ -199,10 +232,7 @@ template <typename T> class opt
     operator=(typename std::enable_if_t<is_reference, MaybeT> something)
         ZIGLIKE_NOEXCEPT
     {
-        // no need to destroy the potentially existing reference since
-        // references dont have destructors
-        new (&m_value.some) wrapper(something);
-        m_has_value = true;
+        m.pointer = &something;
         return *this;
     }
 
@@ -221,7 +251,7 @@ template <typename T> class opt
             return !other.has_value();
         } else {
             return !other.has_value() ? false
-                                      : self.m_value.some == other.m_value.some;
+                                      : self.m.value.some == other.m.value.some;
         }
     }
 
@@ -231,7 +261,7 @@ template <typename T> class opt
         const std::enable_if_t<!is_reference && std::is_same_v<MaybeT, T>,
                                MaybeT> &other) ZIGLIKE_NOEXCEPT
     {
-        return !has_value() ? false : m_value.some == other;
+        return !has_value() ? false : m.value.some == other;
     }
 
     /// NOT EQUALS: Compare an optional to another optional of the same type
@@ -245,7 +275,7 @@ template <typename T> class opt
             return other.has_value();
         } else {
             return !other.has_value() ? true
-                                      : self.m_value.some != other.m_value.some;
+                                      : self.m.value.some != other.m.value.some;
         }
     }
 
@@ -255,7 +285,7 @@ template <typename T> class opt
         const std::enable_if_t<!opt<MaybeT>::is_reference, MaybeT> &other)
         ZIGLIKE_NOEXCEPT
     {
-        return !has_value() ? true : m_value.some != other;
+        return !has_value() ? true : m.value.some != other;
     }
 
 #ifdef ZIGLIKE_USE_FMT
@@ -287,12 +317,11 @@ template <typename T> struct fmt::formatter<zl::opt<T>>
     format_context::iterator format(const zl::opt<T> &optional,
                                     format_context &ctx) const
     {
-        if (optional.m_has_value) {
+        if (optional.has_value()) {
             if constexpr (zl::opt<T>::is_reference) {
-                return fmt::format_to(ctx.out(), "{}",
-                                      optional.m_value.some.item);
+                return fmt::format_to(ctx.out(), "{}", *optional.m.pointer);
             } else {
-                return fmt::format_to(ctx.out(), "{}", optional.m_value.some);
+                return fmt::format_to(ctx.out(), "{}", optional.m.value.some);
             }
         }
         return fmt::format_to(ctx.out(), "null");
