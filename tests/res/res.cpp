@@ -119,9 +119,10 @@ TEST_SUITE("res")
             };
 
             res vec_result_3(passthrough(std::move(vec_result_modified)));
+            REQUIRE(!vec_result_modified.okay());
 
-            REQUIRE(vec_result_modified.okay());
-            std::vector<size_t> vec_modified = vec_result_modified.release();
+            REQUIRE(vec_result_3.okay());
+            std::vector<size_t> vec_modified = vec_result_3.release();
             REQUIRE(vec_modified.size() == 1);
             REQUIRE(vec_modified[0] == 42);
         }
