@@ -8,7 +8,8 @@ namespace reserve {
 class _abort_exception : std::exception
 {
   public:
-    char *what() { return "Program failure."; }
+    // NOLINTNEXTLINE
+    char *what() { return const_cast<char *>("Program failure."); }
 };
 } // namespace reserve
 #define ZIGLIKE_ABORT() throw ::reserve::_abort_exception()

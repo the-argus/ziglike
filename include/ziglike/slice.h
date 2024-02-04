@@ -8,10 +8,7 @@
 #include "ziglike/detail/abort.h"
 
 #ifdef ZIGLIKE_USE_FMT
-#include "formatters/slice.h"
-namespace fmt {
-template <typename T> struct formatter;
-}
+#include <fmt/core.h>
 #endif
 
 namespace zl {
@@ -223,7 +220,7 @@ template <typename T> class slice
 
     friend constexpr inline slice zl::raw_slice(T &data, size_t size) noexcept;
 #ifdef ZIGLIKE_USE_FMT
-    friend struct fmt::formatter<slice>;
+    // friend struct fmt::formatter<slice>;
 #endif
 };
 
@@ -236,3 +233,30 @@ template <typename T>
 }
 
 } // namespace zl
+
+#ifdef ZIGLIKE_USE_FMT
+template <typename T> struct fmt::formatter<zl::slice<T>>
+{
+    constexpr auto parse(format_parse_context &ctx)
+        -> format_parse_context::iterator
+    {
+        auto it = ctx.begin();
+
+        // first character should just be closing brackets since we dont allow
+        // anything else
+        if (it != ctx.end() && *it != '}')
+            throw_format_error("invalid format");
+
+        // just immediately return the iterator to the ending valid character
+        return it;
+    }
+
+    auto format(const zl::slice<T> &slice, format_context &ctx) const
+        -> format_context::iterator
+    {
+        return fmt::format_to(ctx.out(), "[{:p} -> {}]",
+                              reinterpret_cast<void *>(slice.m_data),
+                              slice.m_elements);
+    }
+};
+#endif
