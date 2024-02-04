@@ -1,0 +1,95 @@
+#include "test_header.h"
+// test header must be first
+#include "ziglike/opt.h"
+#include "testing_types.h"
+
+using namespace zl;
+
+TEST_SUITE("opt")
+{
+    TEST_CASE("Construction and type behavior")
+    {
+        SUBCASE("Default construction")
+        {
+            opt<int> def;
+            REQUIRE(!def);
+            REQUIRE(def != 0);
+        }
+        SUBCASE("Construction with value")
+        {
+            opt<int> has = 10;
+            REQUIRE(has.has_value());
+            REQUIRE(has == 10);
+            REQUIRE(has.value() == 10);
+        }
+    }
+
+    TEST_CASE("Functionality")
+    {
+        SUBCASE("Resetting")
+        {
+            opt<std::vector<int>> vec;
+            // null by default
+            REQUIRE(!vec.has_value());
+            vec.emplace();
+            REQUIRE(vec.has_value());
+            vec.value().push_back(42);
+            REQUIRE(vec.value()[0] == 42);
+            vec.reset();
+            REQUIRE(!vec.has_value());
+        }
+
+        SUBCASE("Aborts on null")
+        {
+            opt<int> nope;
+            REQUIREABORTS(++nope.value());
+        }
+
+        SUBCASE("moving non-trivially-copyable type")
+        {
+            moveable_t moveguy;
+            int bytes = std::snprintf(moveguy.nothing, 50, "nope");
+
+            opt<moveable_t> maybe_moveguy = std::move(moveguy);
+            REQUIRE(maybe_moveguy.has_value());
+            // and this shouldnt work
+            // opt<moveable_t> maybe_moveguy = moveguy;
+
+            REQUIRE(strcmp(maybe_moveguy.value().nothing, "nope") == 0);
+        }
+
+        SUBCASE("moving or copying trivially copyable type")
+        {
+            struct thing
+            {
+                int yeah = 10234;
+                bool no = false;
+            };
+
+            thing copyguy;
+            opt<thing> maybe_copyguy = copyguy;
+            // identical to:
+            opt<thing> maybe_copyguy_moved = std::move(copyguy);
+
+            REQUIRE(maybe_copyguy.has_value());
+            REQUIRE(maybe_copyguy_moved.has_value());
+        }
+
+#ifdef ZIGLIKE_USE_FMT
+        SUBCASE("formattable")
+        {
+            opt<std::string_view> str;
+            str = "yello";
+            fmt::println("optional string BEFORE: {}", str);
+            str.reset();
+            fmt::println("optional string AFTER: {}", str);
+
+            std::string_view target = "reference yello";
+            opt<std::string_view &> refstr(target);
+            fmt::println("optional reference string BEFORE: {}", refstr);
+            refstr.reset();
+            fmt::println("optional reference string AFTER: {}", refstr);
+        }
+#endif
+    }
+}
