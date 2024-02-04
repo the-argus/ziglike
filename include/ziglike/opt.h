@@ -206,21 +206,56 @@ template <typename T> class opt
         return *this;
     }
 
-    /// Comparable to non-optional versions of the same type, only if not a
-    /// reference.
     /// NOTE: References are not able to use the == overload because
     /// it would not be clear whether it was a strict comparison or not. (ie is
     /// it comparing the address or the contents of the thing at the address?)
+
+    /// EQUALS: Compare an optional to another optional of the same type
+    template <typename ThisType>
+    inline constexpr friend bool operator==(
+        const typename std::enable_if_t<
+            !is_reference && std::is_same_v<ThisType, opt>, ThisType> &self,
+        const ThisType &other) ZIGLIKE_NOEXCEPT
+    {
+        if (!self.has_value()) {
+            return !other.has_value();
+        } else {
+            return !other.has_value() ? false
+                                      : self.m_value.some == other.m_value.some;
+        }
+    }
+
+    /// EQUALS: Compare an optional to something of its contained type
     template <typename MaybeT = T>
     inline constexpr bool operator==(
-        const typename std::enable_if_t<!is_reference, MaybeT> &something)
+        const std::enable_if_t<!is_reference && std::is_same_v<MaybeT, T>,
+                               MaybeT> &other) ZIGLIKE_NOEXCEPT
+    {
+        return !has_value() ? false : m_value.some == other;
+    }
+
+    /// NOT EQUALS: Compare an optional to another optional of the same type
+    template <typename ThisType>
+    inline constexpr friend bool operator!=(
+        const typename std::enable_if_t<
+            !is_reference && std::is_same_v<ThisType, opt>, ThisType> &self,
+        const ThisType &other) ZIGLIKE_NOEXCEPT
+    {
+        if (!self.has_value()) {
+            return other.has_value();
+        } else {
+            return !other.has_value() ? true
+                                      : self.m_value.some != other.m_value.some;
+        }
+    }
+
+    /// NOT EQUALS: Compare an optional to something of its contained type
+    template <typename MaybeT = T>
+    inline constexpr bool operator!=(
+        const std::enable_if_t<!opt<MaybeT>::is_reference, MaybeT> &other)
         ZIGLIKE_NOEXCEPT
     {
-        if (!has_value())
-            return false;
-        else {
-            return m_value.some == something;
-        }
+        return !has_value() ? true : m_value.some != other;
     }
 
 #ifdef ZIGLIKE_USE_FMT

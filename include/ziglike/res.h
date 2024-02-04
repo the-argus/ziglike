@@ -195,9 +195,7 @@ template <typename T, typename StatusCode> class res
              std::is_move_constructible_v<T>)&&std::is_same_v<ThisType, res>,
             ThisType> &&other) ZIGLIKE_NOEXCEPT
     {
-        if (&other == this) [[unlikely]]
-            return *this;
-        else if (other.okay()) {
+        if (other.okay()) {
             if constexpr (is_reference) {
                 m_value.some.item = other.m_value.some.item;
             } else {
@@ -208,7 +206,6 @@ template <typename T, typename StatusCode> class res
         // make it an error to access a result after it has been moved into
         // another
         other.m_status = StatusCode::ResultReleased;
-        return *this;
     }
 
     inline ~res() ZIGLIKE_NOEXCEPT

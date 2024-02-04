@@ -118,7 +118,7 @@ TEST_SUITE("res")
                 return std::move(result);
             };
 
-            vec_result_modified = passthrough(std::move(vec_result_modified));
+            res vec_result_3(passthrough(std::move(vec_result_modified)));
 
             REQUIRE(vec_result_modified.okay());
             std::vector<size_t> vec_modified = vec_result_modified.release();

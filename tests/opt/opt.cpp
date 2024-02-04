@@ -1,7 +1,7 @@
 #include "test_header.h"
 // test header must be first
-#include "ziglike/opt.h"
 #include "testing_types.h"
+#include "ziglike/opt.h"
 
 using namespace zl;
 
@@ -15,12 +15,46 @@ TEST_SUITE("opt")
             REQUIRE(!def);
             REQUIRE(def != 0);
         }
+
         SUBCASE("Construction with value")
         {
             opt<int> has = 10;
             REQUIRE(has.has_value());
             REQUIRE(has == 10);
             REQUIRE(has.value() == 10);
+        }
+
+        SUBCASE("comparison")
+        {
+            opt<int> one = 100;
+            opt<int> two;
+            REQUIRE(one != two);
+            REQUIRE(two != one);
+            two = 200;
+            {
+                bool both_has_value = one.has_value() && two.has_value();
+                REQUIRE(both_has_value);
+            }
+            REQUIRE(one != two);
+            REQUIRE(two != one);
+            one.reset();
+            two.reset();
+            {
+                bool both_dont_has_value = !one.has_value() && !two.has_value();
+                REQUIRE(both_dont_has_value);
+            }
+            REQUIRE(one == two);
+            one = 1;
+            two = 1;
+            REQUIRE(one == two);
+        }
+
+        SUBCASE("convertible to bool")
+        {
+            opt<int> nothing;
+            REQUIRE(!nothing);
+            opt<int> something = 1;
+            REQUIRE(something);
         }
     }
 
