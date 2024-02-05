@@ -167,11 +167,6 @@ template <typename T> class slice
             return a.m_ptr != b.m_ptr;
         };
 
-            // TODO: implement this (ran into template deducible type problems)
-#ifdef ZIGLIKE_USE_FMT
-        friend struct fmt::formatter<iterator>;
-#endif
-
       private:
         pointer m_ptr;
     };
@@ -226,11 +221,6 @@ template <typename T> class slice
         {
             return a.m_ptr != b.m_ptr;
         };
-
-            // TODO: implement this (ran into template deducible type problems)
-#ifdef ZIGLIKE_USE_FMT
-        friend struct fmt::formatter<const_iterator>;
-#endif
 
       private:
         pointer m_ptr;

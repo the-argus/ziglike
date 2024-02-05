@@ -50,7 +50,7 @@ for (int integer : half_the_ints) {
 
 ## Friends
 
-- `static slice<T> raw_slice(T& data, size_t size)`
+- `slice<T> raw_slice(T& data, size_t size)`
 
   - Takes in `data`, which is a reference to the first item in an array of `T`. `size` is how many of those items you want to point at. Returns a slice that points at those things.
   - This is the only memory-unsafe part of `slice` (besides double-free and use-after-free potential due to raw pointer storage).

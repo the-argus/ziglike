@@ -25,11 +25,11 @@ template <typename T> class opt
 {
   public:
     // type constraints
-    static_assert((!std::is_reference<T>::value && std::is_destructible_v<T>) ||
-                      (std::is_reference<T>::value &&
-                       std::is_lvalue_reference_v<T>),
-                  "Optional type must be either nothrow destructible or an "
-                  "lvalue reference type.");
+    static_assert(
+        (!std::is_reference<T>::value && std::is_nothrow_destructible_v<T>) ||
+            (std::is_reference<T>::value && std::is_lvalue_reference_v<T>),
+        "Optional type must be either nothrow destructible or an "
+        "lvalue reference type.");
 
 #ifndef ZIGLIKE_OPTIONAL_ALLOW_POINTERS
     static_assert(!std::is_pointer_v<T>,

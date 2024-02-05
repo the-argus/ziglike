@@ -122,11 +122,10 @@ template <typename T, typename StatusCode> class res
         !is_reference && std::is_constructible_v<T, Args...> &&
             std::is_same_v<ThisType, res>,
         ThisType> &&
-    construct_into(Args &&...args) ZIGLIKE_NOEXCEPT
+    make(Args &&...args) ZIGLIKE_NOEXCEPT
     {
         res empty;
         new (&empty.m_value.some) T(std::forward<decltype(args)>(args)...);
-        assert(empty.okay());
         return empty;
     }
 

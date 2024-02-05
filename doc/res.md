@@ -9,7 +9,7 @@ class res
 
 General notes:
 
-- `res` is formattable, provided that `T` is formattable. This means that you can `fmt::println("my result: {}", my_result);` to print a result, no need to convert it to anything.
+- `res` is formattable, provided that `T` is formattable.
 
 - `res` is move constructible, provided that `T` is not a reference type and is move constructible.
 
@@ -18,6 +18,8 @@ General notes:
 - `res` is never move or copy assignable: you can only create one and then release it later. To perform an "assignment," you can `std::move` the value returned by `release` into the constructor of another `res`.
 
 - A `res` is guaranteed to be only one byte larger than `T`.
+
+- A `res` is not threadsafe: it is intended to be used by only one thread as a return value from a function.
 
 ## Type constraints
 
@@ -37,17 +39,21 @@ enum class MemoryAllocationErrorCode : uint8_t {
 
 - `bool okay() const`
 
-  - Returns true if the result's payload is valid and its not an error. Returns false if the result contains an error. Shortcut for `status() == StatusCode::Okay`
+  - Returns true if the result's payload is valid and its not an error.
+  - Returns false if the result contains an error.
+  - Shortcut for `status() == StatusCode::Okay`
 
 - `StatusCode status() const`
 
-  - Returns the statuscode contained by the result. Always valid. If the result is not an error, this will be equal to `StatusCode::Okay`.
+  - Returns the statuscode contained by the result.
+  - Always valid to call this function.
+  - If the result is not an error, this will be equal to `StatusCode::Okay`.
 
 - `T && release()` (note: only available if `T` is not a reference type)
 
   - If the result is an error, this will print an error message and crash the program. Otherwise, it will return the item inside the result. It also sets the error code inside the result to `ResultReleased`.
   - Do not call this function twice: the result becomes an error after you remove the valid item from it.
-  - Use this to convert the big evil result type like `gen::res<size_t*, MemoryAllocationErrorCode>` into a `size_t*`.
+  - Use this to convert the big evil result type like `zl::res<size_t*, MemoryAllocationErrorCode>` into a `size_t*`.
   - Always make sure that `okay()` returns true before calling this function.
 
 - `T release()` (note: only available if `T` is a reference type)
@@ -64,6 +70,6 @@ enum class MemoryAllocationErrorCode : uint8_t {
 
 ## Static Methods
 
-- `res construct_into(Args...)`
+- `res make(Args...)`
 
-  - Allows you to construct something and a `res` around it at the same time. Useful if something has an expensive move constructor and you don't want to have to construct it outside the result, and then move it into it.
+  - Factory function which directly constructs something into a result and then returns that result. Useful if something has an expensive move constructor and you don't want to have to construct it outside the result, and then move it into it.
