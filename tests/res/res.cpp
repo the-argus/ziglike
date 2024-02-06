@@ -93,15 +93,15 @@ TEST_SUITE("res")
             REQUIRE(result.err() == StatusCodeB::ResultReleased);
         }
 
+        enum class VectorCreationStatusCode : uint8_t
+        {
+            Okay,
+            ResultReleased,
+            OOM,
+        };
+
         SUBCASE("std::vector result")
         {
-            enum class VectorCreationStatusCode : uint8_t
-            {
-                Okay,
-                ResultReleased,
-                OOM,
-            };
-
             using res = res<std::vector<size_t>, VectorCreationStatusCode>;
 
             res vec_result((std::vector<size_t>()));
@@ -125,6 +125,13 @@ TEST_SUITE("res")
             std::vector<size_t> vec_modified = vec_result_3.release();
             REQUIRE(vec_modified.size() == 1);
             REQUIRE(vec_modified[0] == 42);
+        }
+
+        SUBCASE("res::make factory")
+        {
+            using mres = res<std::vector<size_t>, VectorCreationStatusCode>;
+            auto valid_res = mres::make();
+            REQUIRE(valid_res.okay());
         }
 
         SUBCASE("reference result")

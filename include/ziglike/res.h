@@ -59,10 +59,13 @@ template <typename T, typename StatusCode> class res
         ~raw_optional() ZIGLIKE_NOEXCEPT {}
     };
 
-    // keeps track of the status. if it is StatusCode::Okay, then we have
-    // something inside the raw_optional. Otherwise, its contents are undefined.
-    StatusCode m_status;
-    raw_optional m_value{.none = 0};
+    struct members
+    {
+        StatusCode status;
+        raw_optional value{.none = 0};
+    };
+
+    members m;
 
   public:
     using type = T;
@@ -71,12 +74,12 @@ template <typename T, typename StatusCode> class res
     /// Returns true if it is safe to call release(), otherwise false.
     [[nodiscard]] inline constexpr bool okay() const ZIGLIKE_NOEXCEPT
     {
-        return m_status == StatusCode::Okay;
+        return m.status == StatusCode::Okay;
     }
 
     [[nodiscard]] inline constexpr StatusCode err() const ZIGLIKE_NOEXCEPT
     {
-        return m_status;
+        return m.status;
     }
 
     /// Return a copy of the internal contents of the result. If this result is
@@ -88,11 +91,11 @@ template <typename T, typename StatusCode> class res
         if (!okay()) [[unlikely]] {
             ZIGLIKE_ABORT();
         }
-        m_status = StatusCode::ResultReleased;
+        m.status = StatusCode::ResultReleased;
         if constexpr (is_reference) {
-            return m_value.some.item;
+            return m.value.some.item;
         } else {
-            return std::move(m_value.some);
+            return std::move(m.value.some);
         }
     }
 
@@ -108,8 +111,8 @@ template <typename T, typename StatusCode> class res
         if (!okay()) [[unlikely]] {
             ZIGLIKE_ABORT();
         }
-        m_status = StatusCode::ResultReleased;
-        return m_value.some;
+        m.status = StatusCode::ResultReleased;
+        return m.value.some;
     }
 
     /// Cannot call release_ref on an rvalue result
@@ -125,8 +128,9 @@ template <typename T, typename StatusCode> class res
     make(Args &&...args) ZIGLIKE_NOEXCEPT
     {
         res empty;
-        new (&empty.m_value.some) T(std::forward<decltype(args)>(args)...);
-        return empty;
+        new (&empty.m.value.some) T(std::forward<decltype(args)>(args)...);
+        empty.m.status = StatusCode::Okay;
+        return std::move(empty);
     }
 
     /// if T is a reference type, then you can construct a result from it
@@ -134,8 +138,8 @@ template <typename T, typename StatusCode> class res
     inline constexpr res(typename std::enable_if_t<is_reference, MaybeT>
                              success) ZIGLIKE_NOEXCEPT
     {
-        m_status = StatusCode::Okay;
-        new (&m_value.some) wrapper(success);
+        m.status = StatusCode::Okay;
+        new (&m.value.some) wrapper(success);
     }
 
     /// Wrapped type can moved into a result
@@ -146,8 +150,8 @@ template <typename T, typename StatusCode> class res
         static_assert(std::is_move_constructible_v<T>,
                       "Attempt to move a type T into a result but it's not "
                       "move constructible.");
-        m_status = StatusCode::Okay;
-        new (&m_value.some) T(std::move(success));
+        m.status = StatusCode::Okay;
+        new (&m.value.some) T(std::move(success));
     }
 
     /// A statuscode can also be implicitly converted to a result
@@ -156,7 +160,7 @@ template <typename T, typename StatusCode> class res
         if (failure == StatusCode::Okay) [[unlikely]] {
             ZIGLIKE_ABORT();
         }
-        m_status = failure;
+        m.status = failure;
     }
 
     /// Copy constructor only available if the wrapped type is trivially
@@ -172,12 +176,12 @@ template <typename T, typename StatusCode> class res
             return *this;
         if (other.okay()) {
             if constexpr (is_reference) {
-                m_value.some = other.m_value.some.item;
+                m.value.some = other.m.value.some.item;
             } else {
-                m_value.some = other.m_value.some;
+                m.value.some = other.m.value.some;
             }
         }
-        m_status = other.m_status;
+        m.status = other.m.status;
         return *this;
     }
 
@@ -196,15 +200,15 @@ template <typename T, typename StatusCode> class res
     {
         if (other.okay()) {
             if constexpr (is_reference) {
-                m_value.some.item = other.m_value.some.item;
+                m.value.some.item = other.m.value.some.item;
             } else {
-                m_value.some = std::move(other.m_value.some);
+                m.value.some = std::move(other.m.value.some);
             }
         }
-        m_status = other.m_status;
+        m.status = other.m.status;
         // make it an error to access a result after it has been moved into
         // another
-        other.m_status = StatusCode::ResultReleased;
+        other.m.status = StatusCode::ResultReleased;
     }
 
     inline ~res() ZIGLIKE_NOEXCEPT
@@ -212,10 +216,10 @@ template <typename T, typename StatusCode> class res
         if constexpr (!is_reference) {
             // always call the destructor of the thing if it was emplaced
             if (okay()) {
-                m_value.some.~T();
+                m.value.some.~T();
             }
         }
-        m_status = StatusCode::ResultReleased;
+        m.status = StatusCode::ResultReleased;
     }
 
 #ifdef ZIGLIKE_USE_FMT
@@ -225,7 +229,7 @@ template <typename T, typename StatusCode> class res
   private:
     inline constexpr explicit res() ZIGLIKE_NOEXCEPT
     {
-        m_status = StatusCode::Okay;
+        m.status = StatusCode::Okay;
     }
 };
 } // namespace zl
@@ -253,19 +257,19 @@ struct fmt::formatter<zl::res<T, StatusCode>>
         if (result.okay()) {
             if constexpr (zl::res<T, StatusCode>::is_reference) {
                 return fmt::format_to(ctx.out(), "{}",
-                                      result.m_value.some.item);
+                                      result.m.value.some.item);
             } else {
-                return fmt::format_to(ctx.out(), "{}", result.m_value.some);
+                return fmt::format_to(ctx.out(), "{}", result.m.value.some);
             }
         } else {
             if constexpr (fmt::is_formattable<
-                              decltype(result.m_status)>::value) {
-                return fmt::format_to(ctx.out(), "err {}", result.m_status);
+                              decltype(result.m.status)>::value) {
+                return fmt::format_to(ctx.out(), "err {}", result.m.status);
             } else {
                 return fmt::format_to(
                     ctx.out(), "err {}",
-                    std::underlying_type_t<decltype(result.m_status)>(
-                        result.m_status));
+                    std::underlying_type_t<decltype(result.m.status)>(
+                        result.m.status));
             }
         }
     }

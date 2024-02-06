@@ -73,3 +73,4 @@ enum class MemoryAllocationErrorCode : uint8_t {
 - `res make(Args...)`
 
   - Factory function which directly constructs something into a result and then returns that result. Useful if something has an expensive move constructor and you don't want to have to construct it outside the result, and then move it into it.
+  - Still ultimately moves the item once, to return it from the function. Theoretically could help to elide a single move in some cases.
