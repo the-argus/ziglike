@@ -124,7 +124,7 @@ template <typename T, typename StatusCode> class res
     static inline constexpr std::enable_if_t<
         !is_reference && std::is_constructible_v<T, Args...> &&
             std::is_same_v<ThisType, res>,
-        ThisType> &&
+        ThisType>
     make(Args &&...args) ZIGLIKE_NOEXCEPT
     {
         res empty;
