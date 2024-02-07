@@ -50,7 +50,8 @@ int main()
 {
     auto maybe_bytes = alloc_bytes();
     if (!maybe_bytes.okay()) {
-        printf("Allocation failure");
+        printf("Allocation failure, errcode %u", uint8_t(maybe_bytes.status()));
+        // could also switch (maybe_bytes.status())
         return 1;
     }
 
