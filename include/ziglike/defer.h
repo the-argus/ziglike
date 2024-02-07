@@ -1,18 +1,19 @@
 #pragma once
+#include "ziglike/detail/isinstance.h"
 #include "ziglike/opt.h"
 #include <type_traits>
 #include <utility>
 
 namespace zl {
-
-template <
-    typename Callable,
-    // template only works if Callable is in fact callable with no
-    // arguments, and returns void
-    typename std::enable_if<std::is_same_v<void, decltype(Callable())>>::type>
-class defer
+// disabled via partial template specialization
+template <typename Callable> class defer
 {
     opt<Callable &&> statement;
+    static_assert(std::is_invocable_r<void, Callable>::value,
+                  "Callable is not invocable with no arguments, and/or it does "
+                  "not return void.");
+    static_assert(!(detail::is_instance<Callable, std::function>{}),
+                  "Do not try to defer a std::function!");
 
   public:
     explicit defer(Callable &&f) : statement(std::forward<Callable>(f)) {}
@@ -23,12 +24,12 @@ class defer
     defer(const defer &) = delete;
     defer(defer &&) = delete;
 
-    inline constexpr void dont() { statement.reset(); }
+    inline constexpr void cancel() { statement.reset(); }
 
     ~defer()
     {
-        if (statement)
-            statement();
+        if (statement.has_value())
+            statement.value()();
     }
 };
 } // namespace zl
