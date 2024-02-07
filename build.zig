@@ -29,6 +29,7 @@ const test_source_files = &[_][]const u8{
     "slice/slice.cpp",
     "factory/factory.cpp",
     "status/status.cpp",
+    "defer/defer.cpp",
 };
 
 pub fn build(b: *std.Build) !void {
