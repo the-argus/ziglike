@@ -11,6 +11,7 @@ Could also be considered a sort of C++17 backport of std::expected and std::span
 - [`zl::res`](./doc/res.md) : replaces exceptions with minimal overhead and no footguns, using error-code enums.
 - [`zl::opt`](./doc/opt.md) : wraps a type and makes it nullable. Similar to std::optional, however it has slightly different semantics and supports reference types. An `opt<T&>` is the same size as a `T*`.
 - [`zl::slice`](./doc/slice.md) : a struct which has a pointer to an array, and a `size_t` number of things. Very similar to `std::span`, but its non-nullable. Also, it works with C++17. An `opt<slice<T>>` is the same size as a `slice<T>`.
+- A rudimentary recreation of Zig's `defer` statement.
 - Utilities for replacing constructors with factory functions, namely the
   [Super-Constructing Super-Elider](https://quuxplusone.github.io/blog/2018/05/17/super-elider-round-2/).
 
@@ -61,6 +62,38 @@ int main()
     // do some stuff with bytes here...
 
     free(bytes);
+}
+```
+
+### `defer`
+
+Defer is especially nice when you have a function with multiple places where
+it can fail, and one success exit point. For example:
+
+```cpp
+using namespace zl;
+
+opt<std::array<void *, 3>> getmems()
+{
+    void *first_mem = malloc(100);
+    if (!first_mem)
+        return {};
+    defer free_first_mem([first_mem]() { free(first_mem); });
+
+    void *second_mem = malloc(100);
+    if (!second_mem)
+        return {};
+    defer free_second_mem([second_mem]() { free(second_mem); });
+
+    void *third_mem = malloc(100);
+    if (!third_mem)
+        return {};
+
+    // okay, all initialization is good, dont free anything
+    free_first_mem.cancel();
+    free_second_mem.cancel();
+
+    return std::array<void *, 3>{first_mem, second_mem, third_mem};
 }
 ```
 
