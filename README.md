@@ -39,7 +39,7 @@ enum class AllocationErrorCode : uint8_t
 
 res<uint8_t *, AllocationErrorCode> alloc_bytes()
 {
-    auto *allocation = new uint8_t[500];
+    auto *allocation = static_cast<uint8_t*>(malloc(500));
     if (!allocation)
         return AllocationErrorCode::OOM;
     else
@@ -59,7 +59,7 @@ int main()
 
     // do some stuff with bytes here...
 
-    delete[] bytes;
+    free(bytes);
 }
 ```
 
