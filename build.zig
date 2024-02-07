@@ -27,6 +27,7 @@ const test_source_files = &[_][]const u8{
     "opt/opt.cpp",
     "res/res.cpp",
     "slice/slice.cpp",
+    "factory/factory.cpp",
 };
 
 pub fn build(b: *std.Build) !void {
