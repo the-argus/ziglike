@@ -1,6 +1,7 @@
 #include "test_header.h"
 // test header must be first
 #include "ziglike/defer.h"
+#include "ziglike/opt.h"
 #include <array>
 #include <unordered_set>
 
