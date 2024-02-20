@@ -19,8 +19,15 @@ TEST_SUITE("stdmem")
 
             REQUIRE(!memcopy(a, b));
             REQUIRE(!memcopy_lenient(b, a));
-            // okay to copy into the bigger buffer
-            REQUIRE(memcopy_lenient(a, b));
+            // normally okay to copy into the bigger buffer, but these overlap
+            REQUIRE(!memcopy_lenient(a, b));
+
+            slice<u8> c(bytes, 200, 250);
+            REQUIRE(memcopy_lenient(b, c));
+            REQUIRE(memcopy_lenient(a, c));
+            // c is smallest so you cant copy stuff into it
+            REQUIRE(!memcopy_lenient(c, b));
+            REQUIRE(!memcopy_lenient(c, a));
         }
 
         SUBCASE("memfill")
