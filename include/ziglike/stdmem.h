@@ -34,6 +34,12 @@ constexpr bool memcontains(zl::slice<T> outer, zl::slice<T> inner) noexcept;
 /// Check if two slices of memory have any memory in common.
 template <typename T>
 constexpr bool memoverlaps(zl::slice<T> a, zl::slice<T> b) noexcept;
+
+/// Fills a block of memory of type T by copying an instance of T into every
+/// spot in that memory. T must be nothrow copy constructible. Does not invoke
+/// destructors of any items already in the memory.
+template <typename T>
+constexpr void memfill(zl::slice<T> slice, T original) noexcept;
 } // namespace zl
 
 template <typename T>
@@ -96,4 +102,22 @@ template <typename T>
 inline constexpr bool zl::memoverlaps(zl::slice<T> a, zl::slice<T> b) noexcept
 {
     return a.begin().ptr() < b.end().ptr() && b.begin().ptr() < a.end().ptr();
+}
+
+template <typename T>
+inline constexpr void zl::memfill(zl::slice<T> slice, const T original) noexcept
+{
+    static_assert(
+        std::is_nothrow_copy_constructible_v<T>,
+        "Cannot memfill a type which can throw when copy constructed.");
+    for (T &item : slice) {
+        new ((void *)std::addressof(item)) T(original);
+    }
+}
+
+template <>
+inline constexpr void zl::memfill(zl::slice<uint8_t> slice,
+                                  const uint8_t original) noexcept
+{
+    std::memset(slice.data(), original, slice.size());
 }
