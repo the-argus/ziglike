@@ -322,6 +322,8 @@ template <typename T> class opt
         return *this;
     }
 
+    inline constexpr explicit operator bool() noexcept { return has_value(); }
+
     /// NOTE: References are not able to use the == overload because
     /// it would not be clear whether it was a strict comparison or not. (ie is
     /// it comparing the address or the contents of the thing at the address?)

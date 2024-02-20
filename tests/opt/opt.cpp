@@ -61,9 +61,29 @@ TEST_SUITE("opt")
         SUBCASE("convertible to bool")
         {
             opt<int> nothing;
+            REQUIRE(!nothing);
             REQUIRE(!nothing.has_value());
             opt<int> something = 1;
+            REQUIRE(something);
             REQUIRE(something.has_value());
+
+            auto bool_to_optional = [](bool input) -> opt<int> {
+                return input ? opt<int>(3478) : opt<int>{};
+            };
+
+            if (auto result = bool_to_optional(true)) {
+                REQUIRE(result);
+                REQUIRE(result.value() == 3478);
+                REQUIRE(result == 3478);
+
+                REQUIRE(result != opt<int>(3477));
+                REQUIRE(result != 3477);
+                REQUIRE(result != opt<int>{});
+            }
+
+            if (auto result = bool_to_optional(false)) {
+                REQUIRE(false); // should never happen
+            }
         }
     }
 
@@ -159,7 +179,7 @@ TEST_SUITE("opt")
             thing copyguy;
             opt<thing> maybe_copyguy = copyguy;
             // identical to:
-            opt<thing> maybe_copyguy_moved = std::move(copyguy);
+            opt<thing> maybe_copyguy_moved = std::move(copyguy); // NOLINT
 
             REQUIRE(maybe_copyguy.has_value());
             REQUIRE(maybe_copyguy_moved.has_value());
