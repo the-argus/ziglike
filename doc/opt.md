@@ -15,18 +15,13 @@ class opt
 
 - `opt` is always copyable, unless `T` is not a reference type and not trivially copyable.
 
-- `opt` is NOT contextually convertible to bool, unlike `std::optional`.
+- `opt` is contextually convertible to bool.
 
 ```cpp
+// contextually convertible to bool!
 zl::opt<int> maybe_int;
-// not allowed
 if (maybe_int) {
-    ...
-}
-
-// do this instead
-if (maybe_int.has_value()) {
-    ...
+   // do stuff with maybe_int.value() here 
 }
 ```
 
