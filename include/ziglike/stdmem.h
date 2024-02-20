@@ -79,8 +79,10 @@ inline constexpr bool zl::memcompare(zl::slice<T> memory_1,
         return true;
     }
     const size_t size = memory_1.size() * sizeof(T);
-    auto *const as_bytes_1 = reinterpret_cast<uint8_t *>(memory_1.data());
-    auto *const as_bytes_2 = reinterpret_cast<uint8_t *>(memory_2.data());
+    const auto *const as_bytes_1 =
+        reinterpret_cast<const uint8_t *>(memory_1.data());
+    const auto *const as_bytes_2 =
+        reinterpret_cast<const uint8_t *>(memory_2.data());
 
     for (size_t i = 0; i < size; ++i) {
         if (as_bytes_1[i] != as_bytes_2[i]) {

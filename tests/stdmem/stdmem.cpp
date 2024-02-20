@@ -28,6 +28,36 @@ TEST_SUITE("stdmem")
             // c is smallest so you cant copy stuff into it
             REQUIRE(!memcopy_lenient(c, b));
             REQUIRE(!memcopy_lenient(c, a));
+
+            REQUIRE(!memcompare(a, b));
+            REQUIRE(!memcompare(a, c));
+            REQUIRE(!memcompare(b, c));
+            REQUIRE(memcompare(c, c));
+        }
+
+        SUBCASE("memcompare for string")
+        {
+            std::array<char, 512> chars;
+            const char *string = "testing string!";
+            size_t length = strlen(string);
+            REQUIRE(std::snprintf(chars.data(), chars.size(), "%s", string) ==
+                    length);
+
+            auto strslice = raw_slice(*string, length);
+            auto array_strslice = raw_slice<const char>(*chars.data(), length);
+            REQUIRE(memcompare(strslice, array_strslice));
+        }
+
+        SUBCASE("memoverlaps")
+        {
+            std::array<u8, 512> bytes;
+
+            slice<u8> a(bytes, 0, 100);
+            slice<u8> b(bytes, 20, 110);
+            slice<u8> c(bytes, 100, 200);
+            REQUIRE(memoverlaps(a, b));
+            REQUIRE(!memoverlaps(a, c));
+            REQUIRE(memoverlaps(c, b));
         }
 
         SUBCASE("memfill")
@@ -42,6 +72,24 @@ TEST_SUITE("stdmem")
             for (size_t i = 0; i < bytes.size(); ++i) {
                 REQUIRE(bytes[i] == (i < 100 ? 1 : 0));
             }
+        }
+
+        SUBCASE("memcontains")
+        {
+            std::array<u8, 512> bytes;
+            slice<u8> a(bytes, 0, 512);
+            slice<u8> b(bytes, 256, 512);
+            slice<u8> c(bytes, 255, 511);
+            REQUIRE(memcontains(a, b));
+            REQUIRE(memcontains(a, c));
+            // nothing can contain A!
+            REQUIRE(!memcontains(b, a));
+            REQUIRE(!memcontains(c, a));
+
+            // no way for b or c to contain the other, they are the same size
+            // just offset
+            REQUIRE(!memcontains(b, c));
+            REQUIRE(!memcontains(c, b));
         }
     }
 }
