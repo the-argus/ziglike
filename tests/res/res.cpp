@@ -2,7 +2,10 @@
 // test header must be first
 #include "testing_types.h"
 #include "ziglike/res.h"
+#include "ziglike/try.h"
 
+#include <array>
+#include <optional>
 #include <type_traits>
 #include <vector>
 
@@ -281,6 +284,132 @@ TEST_SUITE("res")
             increment_on_copy_or_move dummy_3 = dummy_2; // NOLINT
             REQUIRE(copies == 1);
             REQUIRE(moves == 3);
+        }
+    }
+
+    TEST_CASE("try macro")
+    {
+        enum class ExampleError : uint8_t
+        {
+            Okay,
+            ResultReleased,
+            Error,
+        };
+        SUBCASE("try with matching return type")
+        {
+            std::array<uint8_t, 512> memory;
+            std::fill(memory.begin(), memory.end(), 1);
+
+            auto fake_alloc =
+                [&memory](bool should_succeed,
+                          size_t bytes) -> res<uint8_t *, ExampleError> {
+                if (should_succeed) {
+                    return memory.data();
+                } else {
+                    return ExampleError::Error;
+                }
+            };
+
+            auto make_zeroed_buffer =
+                [fake_alloc](bool should_succeed,
+                             size_t bytes) -> res<uint8_t *, ExampleError> {
+                TRY_BLOCK(yielded_memory, fake_alloc(should_succeed, bytes), {
+                    static_assert(
+                        std::is_same_v<decltype(yielded_memory), uint8_t *>);
+                    for (size_t i = 0; i < bytes; ++i) {
+                        yielded_memory[i] = 0;
+                    }
+                    return yielded_memory;
+                });
+            };
+
+            auto failed_result = make_zeroed_buffer(false, 100);
+            for (size_t i = 0; i < 100; ++i) {
+                REQUIRE(memory[i] == 1);
+            }
+            auto succeeded_result = make_zeroed_buffer(true, 100);
+            REQUIRE(!failed_result.okay());
+            REQUIRE(succeeded_result.okay());
+            for (size_t i = 0; i < 100; ++i) {
+                REQUIRE(memory[i] == 0);
+            }
+        }
+
+        SUBCASE("try_ref macro")
+        {
+            static size_t copy_count = 0;
+            struct BigThing
+            {
+                std::array<int, 300> numbers;
+                inline constexpr BigThing() : numbers({}) {}
+                inline constexpr BigThing(const BigThing &other)
+                    : numbers(other.numbers)
+                {
+                    ++copy_count;
+                }
+                BigThing &operator=(const BigThing &other) = delete;
+            };
+
+            auto try_make_big_thing =
+                [](bool should_succeed) -> res<BigThing, ExampleError> {
+                if (should_succeed)
+                    return BigThing{};
+                else
+                    return ExampleError::Error;
+            };
+
+            static_assert(
+                !decltype(detail::is_lvalue(try_make_big_thing(true)))::value,
+                "return value from function not recognized as rvalue");
+            {
+                int test = 0;
+                static_assert(decltype(detail::is_lvalue(test))::value,
+                              "local integer not recognized as lvalue");
+            }
+
+            auto attempt =
+                [try_make_big_thing](bool should_succeed) -> ExampleError {
+                TRY_REF_BLOCK(big_thing, try_make_big_thing(should_succeed), {
+                    for (int &number : big_thing.numbers) {
+                        number = 0;
+                    }
+                    return ExampleError::Okay;
+                });
+            };
+
+            auto try_make_big_thing_optional =
+                [](bool should_succeed) -> std::optional<BigThing> {
+                if (should_succeed)
+                    return BigThing{};
+                else
+                    return {};
+            };
+
+            auto optional_attempt = [try_make_big_thing_optional]() -> bool {
+                decltype(try_make_big_thing_optional(true))
+                    _private_result_big_thing(
+                        try_make_big_thing_optional(true));
+                if (!_private_result_big_thing.has_value())
+                    return false;
+                auto(big_thing) = _private_result_big_thing.value();
+                {
+                    for (int &number : big_thing.numbers) {
+                        number = 0;
+                    }
+                    return true;
+                }
+            };
+
+            REQUIRE(attempt(false) == ExampleError::Error);
+            REQUIRE(copy_count == 0);
+            attempt(true);
+            // once for it to be copied into the result returned from the first
+            // function, and once for it to be copied into the temporary
+            // variable used to try on that type
+            REQUIRE(copy_count == 2);
+            optional_attempt();
+            // std::optional causes the same number of copies
+            REQUIRE(copy_count == 4);
         }
     }
 }
