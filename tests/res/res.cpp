@@ -130,11 +130,34 @@ TEST_SUITE("res")
             REQUIRE(vec_modified[0] == 42);
         }
 
-        SUBCASE("res::make factory")
+        SUBCASE("res inplace construction")
         {
-            using mres = res<std::vector<size_t>, VectorCreationStatusCode>;
-            auto valid_res = mres::make();
-            REQUIRE(valid_res.okay());
+            static size_t copies = 0;
+            struct Test
+            {
+                std::array<int, 300> contents;
+                Test() noexcept = default;
+                Test(const Test &other) noexcept : contents(other.contents)
+                {
+                    ++copies;
+                }
+            };
+
+            enum TestCode : uint8_t
+            {
+                Okay,
+                ResultReleased,
+                Error
+            };
+
+            auto getRes = []() -> res<Test, TestCode> {
+                return res<Test, TestCode>{std::in_place};
+            };
+
+            auto myres = getRes();
+            auto &testref = myres.release_ref();
+
+            REQUIRE(copies == 0);
         }
 
         SUBCASE("reference result")
@@ -353,7 +376,7 @@ TEST_SUITE("res")
             auto try_make_big_thing =
                 [](bool should_succeed) -> res<BigThing, ExampleError> {
                 if (should_succeed)
-                    return BigThing{};
+                    return res<BigThing, ExampleError>{std::in_place};
                 else
                     return ExampleError::Error;
             };
@@ -380,7 +403,7 @@ TEST_SUITE("res")
             auto try_make_big_thing_optional =
                 [](bool should_succeed) -> std::optional<BigThing> {
                 if (should_succeed)
-                    return BigThing{};
+                    return std::optional<BigThing>{std::in_place};
                 else
                     return {};
             };
@@ -406,10 +429,10 @@ TEST_SUITE("res")
             // once for it to be copied into the result returned from the first
             // function, and once for it to be copied into the temporary
             // variable used to try on that type
-            REQUIRE(copy_count == 2);
+            REQUIRE(copy_count == 1);
             optional_attempt();
             // std::optional causes the same number of copies
-            REQUIRE(copy_count == 4);
+            REQUIRE(copy_count == 2);
         }
     }
 }

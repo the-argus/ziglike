@@ -3,6 +3,7 @@
 #include "detail/abort.h"
 #include <cstdint>
 #include <type_traits>
+#include <utility> // std::in_place_t
 
 #ifdef ZIGLIKE_USE_FMT
 #include <fmt/core.h>
@@ -105,8 +106,9 @@ template <typename T, typename StatusCode> class res
     /// function. Do not try to call release() or release_ref() again, after
     /// calling release() or release_ref() once, the result is invalidated.
     template <typename MaybeT = T>
-        [[nodiscard]] inline typename std::enable_if_t<!is_reference, MaybeT>
-            &release_ref() & ZIGLIKE_NOEXCEPT
+        [[nodiscard]] inline typename std::enable_if_t<!is_reference, MaybeT> &
+        release_ref() &
+        ZIGLIKE_NOEXCEPT
     {
         if (!okay()) [[unlikely]] {
             ZIGLIKE_ABORT();
@@ -115,22 +117,14 @@ template <typename T, typename StatusCode> class res
         return m.value.some;
     }
 
-    /// Cannot call release_ref on an rvalue result
-    // T &release_ref() && ZIGLIKE_NOEXCEPT requires(!is_reference) = delete;
-
-    /// Can construct a T directly into the result, if the result doesn't
-    /// contain a reference type.
-    template <typename ThisType = res, typename... Args>
-    static inline constexpr std::enable_if_t<
-        !is_reference && std::is_constructible_v<T, Args...> &&
-            std::is_same_v<ThisType, res>,
-        ThisType>
-    make(Args &&...args) ZIGLIKE_NOEXCEPT
+    template <typename MaybeT = T, typename... Args>
+    inline constexpr res(
+        std::enable_if_t<!is_reference && std::is_constructible_v<T, Args...>,
+                         std::in_place_t>,
+        Args &&...args) noexcept
     {
-        res empty;
-        new (&empty.m.value.some) T(std::forward<decltype(args)>(args)...);
-        empty.m.status = StatusCode::Okay;
-        return std::move(empty);
+        m.status = StatusCode::Okay;
+        new (&m.value.some) T(std::forward<Args>(args)...);
     }
 
     /// if T is a reference type, then you can construct a result from it
