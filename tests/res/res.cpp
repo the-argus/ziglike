@@ -364,8 +364,8 @@ TEST_SUITE("res")
             struct BigThing
             {
                 std::array<int, 300> numbers;
-                inline constexpr BigThing() : numbers({}) {}
-                inline constexpr BigThing(const BigThing &other)
+                inline constexpr BigThing() noexcept : numbers({}) {}
+                inline constexpr BigThing(const BigThing &other) noexcept
                     : numbers(other.numbers)
                 {
                     ++copy_count;

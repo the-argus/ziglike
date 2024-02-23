@@ -30,15 +30,15 @@ struct moveable_t
     int whatever;
     char *nothing;
 
-    moveable_t() { nothing = new char[150]; }
-    ~moveable_t() { delete[] nothing; };
+    moveable_t() noexcept { nothing = new char[150]; }
+    ~moveable_t() noexcept { delete[] nothing; };
 
     // no copying
     moveable_t &operator=(const moveable_t &other) = delete;
     moveable_t(const moveable_t &other) = delete;
 
     // yay moving
-    moveable_t &operator=(moveable_t &&other)
+    moveable_t &operator=(moveable_t &&other) noexcept
     {
         nothing = other.nothing;
         whatever = other.whatever;
@@ -46,7 +46,7 @@ struct moveable_t
         other.whatever = 0;
         return *this;
     }
-    moveable_t(moveable_t &&other) { *this = std::move(other); }
+    moveable_t(moveable_t &&other) noexcept { *this = std::move(other); }
 };
 
 struct nonmoveable_t
