@@ -480,7 +480,7 @@ template <typename T> struct fmt::formatter<zl::opt<T>>
 {
     static_assert(
         fmt::is_formattable<T>::value,
-        "Attempt to format an optional whose contents is not formattable.");
+        "Attempt to format an optional whose content is not formattable.");
 
     constexpr format_parse_context::iterator parse(format_parse_context &ctx)
     {
