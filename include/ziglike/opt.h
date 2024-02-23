@@ -229,6 +229,9 @@ template <typename T> class opt
                   std::is_constructible_v<MaybeT, MaybeT &&>,
               MaybeT> &&something) ZIGLIKE_NOEXCEPT
     {
+        static_assert(std::is_nothrow_constructible_v<MaybeT, MaybeT &&>,
+                      "Attempt to move type into an opt, but the move "
+                      "constructor of the type can throw an exception.");
         if (m.has_value) {
             m.value.some.~MaybeT();
         }
@@ -246,6 +249,9 @@ template <typename T> class opt
                              std::is_constructible_v<MaybeT, MaybeT &&>,
                          MaybeT> &&something) ZIGLIKE_NOEXCEPT
     {
+        static_assert(std::is_nothrow_constructible_v<MaybeT, MaybeT &&>,
+                      "Attempt to move type into an opt, but the move "
+                      "constructor of the type can throw an exception.");
         new (&m.value.some) MaybeT(std::move(something));
         m.has_value = true;
     }

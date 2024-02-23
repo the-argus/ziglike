@@ -22,14 +22,14 @@ template <typename T, typename StatusCode> class res
   public:
     static_assert(
         std::is_lvalue_reference<T>::value ||
-            (std::is_destructible_v<T> &&
+            (std::is_nothrow_destructible_v<T> &&
              // type must be either moveable or trivially copyable, otherwise it
              // cant be returned from/moved out of a function
              (std::is_move_constructible_v<T> ||
               std::is_trivially_copy_constructible_v<T>)),
         "Invalid type passed to res's first template argument. The type "
         "must either be a lvalue reference, trivially copy constructible, or "
-        "move constructible.");
+        "nothrow move constructible.");
 
     static_assert(
         std::is_enum_v<StatusCode> && sizeof(StatusCode) == 1 &&
