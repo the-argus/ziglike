@@ -123,6 +123,9 @@ template <typename T, typename StatusCode> class res
                          std::in_place_t>,
         Args &&...args) noexcept
     {
+        static_assert(std::is_nothrow_constructible_v<T, Args...>,
+                      "Attempt to construct in place but constructor invoked "
+                      "can throw exceptions.");
         m.status = StatusCode::Okay;
         new (&m.value.some) T(std::forward<Args>(args)...);
     }
@@ -138,12 +141,14 @@ template <typename T, typename StatusCode> class res
 
     /// Wrapped type can moved into a result
     template <typename MaybeT = T>
-    inline constexpr res(typename std::enable_if_t<!is_reference, MaybeT>
-                             &&success) ZIGLIKE_NOEXCEPT
+    inline constexpr res(
+        typename std::enable_if_t<
+            !is_reference && std::is_move_constructible_v<T>, MaybeT> &&success)
+        ZIGLIKE_NOEXCEPT
     {
-        static_assert(std::is_move_constructible_v<T>,
-                      "Attempt to move a type T into a result but it's not "
-                      "move constructible.");
+        static_assert(std::is_nothrow_move_constructible_v<T>,
+                      "Attempt to use move constructor, but it throws and "
+                      "function is marked noexcept.");
         m.status = StatusCode::Okay;
         new (&m.value.some) T(std::move(success));
     }
@@ -208,7 +213,6 @@ template <typename T, typename StatusCode> class res
     inline ~res() ZIGLIKE_NOEXCEPT
     {
         if constexpr (!is_reference) {
-            // always call the destructor of the thing if it was emplaced
             if (okay()) {
                 m.value.some.~T();
             }
