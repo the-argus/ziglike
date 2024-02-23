@@ -302,11 +302,29 @@ template <typename T> class opt
             m.elements = something.size();
         } else {
 #endif
-            new (&m.value.some) T(something);
+            new (std::addressof(m.value.some)) T(something);
             m.has_value = true;
 #ifndef ZIGLIKE_NO_SMALL_OPTIONAL_SLICE
         }
 #endif
+    }
+
+    template <typename... Args>
+    inline constexpr opt(
+        std::enable_if_t<(
+#ifndef ZIGLIKE_NO_SMALL_OPTIONAL_SLICE
+                             !is_slice &&
+#endif
+                             !is_reference &&
+                             std::is_constructible_v<T, Args...>),
+                         std::in_place_t>,
+        Args &&...args) ZIGLIKE_NOEXCEPT
+    {
+        static_assert(std::is_nothrow_constructible_v<T, Args...>,
+                      "Attempt to construct item in-place in optional but the "
+                      "constructor invoked can throw exceptions.");
+        new (std::addressof(m.value.some)) T(std::forward<Args>(args)...);
+        m.has_value = true;
     }
 
     /// Optional containing a reference type can be directly constructed from

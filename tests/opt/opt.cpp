@@ -139,6 +139,36 @@ TEST_SUITE("opt")
             REQUIRE(!testref.strict_compare(test2));
         }
 
+        SUBCASE("inplace return")
+        {
+            static size_t copy_count = 0;
+            struct BigThing
+            {
+                std::array<int, 300> numbers;
+                inline constexpr BigThing() noexcept : numbers({}) {}
+                inline constexpr BigThing(const BigThing &other) noexcept
+                    : numbers(other.numbers)
+                {
+                    ++copy_count;
+                }
+                BigThing &operator=(const BigThing &other) = delete;
+            };
+
+            auto try_make_big_thing = [](bool should_succeed) -> opt<BigThing> {
+                if (should_succeed)
+                    return opt<BigThing>{std::in_place};
+                else
+                    return {};
+            };
+
+            opt<BigThing> maybe_thing = try_make_big_thing(true);
+            opt<BigThing> maybe_not_thing = try_make_big_thing(true);
+            REQUIRE(copy_count == 0);
+            // one copy required to get it out of the optional
+            BigThing thing = try_make_big_thing(true).value();
+            REQUIRE(copy_count == 1);
+        }
+
         SUBCASE("emplace")
         {
             opt<std::vector<int>> mvec;
