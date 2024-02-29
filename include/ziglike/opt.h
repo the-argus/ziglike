@@ -461,17 +461,12 @@ template <typename T> class opt
     /// ONLY VALID FOR REFERENCE-TYPE OPTIONALS
     template <typename OtherType = T>
     inline constexpr bool strict_compare(
-        const std::enable_if_t<is_reference && (std::is_same_v<OtherType, T> ||
-                                                std::is_same_v<OtherType, opt>),
+        const std::enable_if_t<is_reference && std::is_same_v<OtherType, T>,
                                OtherType> &other) const ZIGLIKE_NOEXCEPT
     {
-        if constexpr (std::is_same_v<OtherType, T>) {
-            if (!has_value())
-                return false;
-            return std::addressof(other) == m.pointer;
-        } else {
-            return other.m.pointer == m.pointer;
-        }
+        if (!has_value())
+            return false;
+        return std::addressof(other) == m.pointer;
     }
 
     /// Loose comparison: compare the thing the optional reference is pointing
@@ -480,17 +475,12 @@ template <typename T> class opt
     /// ONLY VALID FOR REFERENCE-TYPE OPTIONALS
     template <typename OtherType = T>
     inline constexpr bool loose_compare(
-        const std::enable_if_t<is_reference && (std::is_same_v<OtherType, T> ||
-                                                std::is_same_v<OtherType, opt>),
+        const std::enable_if_t<is_reference && (std::is_same_v<OtherType, T>),
                                OtherType> &other) const ZIGLIKE_NOEXCEPT
     {
-        if constexpr (std::is_same_v<OtherType, T>) {
-            if (!has_value())
-                return false;
-            return other == *m.pointer;
-        } else {
-            return *other.m.pointer == *m.pointer;
-        }
+        if (!has_value())
+            return false;
+        return other == *m.pointer;
     }
 
 #ifdef ZIGLIKE_USE_FMT
