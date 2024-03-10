@@ -256,7 +256,7 @@ template <typename T> class opt
         m.has_value = true;
     }
 
-    /// Trivially copyable types can also be assigned into their optionals
+    /// Copyable types can also be assigned into their optionals
     template <typename MaybeT = T>
     inline constexpr opt &
     operator=(const typename std::enable_if_t<
@@ -264,7 +264,7 @@ template <typename T> class opt
               is_slice ||
 #endif
                   (!is_reference &&
-                   std::is_trivially_constructible_v<MaybeT, const MaybeT &>),
+                   std::is_constructible_v<MaybeT, const MaybeT &>),
               MaybeT> &something) ZIGLIKE_NOEXCEPT
     {
 #ifndef ZIGLIKE_NO_SMALL_OPTIONAL_SLICE
@@ -293,7 +293,7 @@ template <typename T> class opt
             is_slice ||
 #endif
                 (!is_reference &&
-                 std::is_trivially_constructible_v<MaybeT, const MaybeT &>),
+                 std::is_constructible_v<MaybeT, const MaybeT &>),
             MaybeT> &something) ZIGLIKE_NOEXCEPT
     {
 #ifndef ZIGLIKE_NO_SMALL_OPTIONAL_SLICE
