@@ -1,6 +1,8 @@
 #pragma once
 
 #include "ziglike/slice.h"
+#include <cstdint>
+#include <cstring>
 
 namespace zl {
 /// Copy the contents of source into destination, byte by byte, without invoking
