@@ -1,5 +1,6 @@
 #pragma once
 #include <type_traits>
+#include <utility>
 
 namespace zl::detail {
 
@@ -17,7 +18,8 @@ template <class T> constexpr std::is_lvalue_reference<T &&> is_lvalue(T &&)
     if (!_private_result_##capture.okay()) {                       \
         return _private_result_##capture.err();                    \
     }                                                              \
-    auto(capture) = _private_result_##capture.release();
+    decltype(result)::type(capture)(                               \
+        std::move(_private_result_##capture.release()));
 
 #define TRY_REF(capture, result)                                   \
     static_assert(!decltype(zl::detail::is_lvalue(result))::value, \
@@ -26,7 +28,8 @@ template <class T> constexpr std::is_lvalue_reference<T &&> is_lvalue(T &&)
     if (!_private_result_##capture.okay()) {                       \
         return _private_result_##capture.err();                    \
     }                                                              \
-    auto(capture) = _private_result_##capture.release_ref();
+    decltype(result)::type(capture)(                               \
+        std::move(_private_result_##capture.release_ref()));
 
 #define TRY_BLOCK(capture, result, code) \
     {                                    \
