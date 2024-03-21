@@ -33,6 +33,11 @@ constexpr bool memcompare(zl::slice<T> memory_1,
 template <typename T>
 constexpr bool memcontains(zl::slice<T> outer, zl::slice<T> inner) noexcept;
 
+/// Check if a given T is contained entirely within a slice of SliceT.
+template <typename SliceT, typename T>
+constexpr bool memcontains_one(zl::slice<SliceT> outer,
+                               const T *inner) noexcept;
+
 /// Check if two slices of memory have any memory in common.
 template <typename T>
 constexpr bool memoverlaps(zl::slice<T> a, zl::slice<T> b) noexcept;
@@ -100,6 +105,14 @@ inline constexpr bool zl::memcontains(zl::slice<T> outer,
 {
     return outer.begin().ptr() <= inner.begin().ptr() &&
            outer.end().ptr() >= inner.end().ptr();
+}
+
+template <typename SliceT, typename T>
+inline constexpr bool zl::memcontains_one(zl::slice<SliceT> outer,
+                                          const T *inner) noexcept
+{
+    return (uint8_t *)outer.begin().ptr() <= (uint8_t *)inner &&
+           (uint8_t *)outer.end().ptr() >= (uint8_t *)(inner + 1);
 }
 
 template <typename T>
