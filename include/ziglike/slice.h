@@ -1,4 +1,5 @@
 #pragma once
+#include "ziglike/detail/isinstance.h"
 #include <cassert>
 
 #ifndef ZIGLIKE_SLICE_NO_ITERATOR
@@ -6,6 +7,7 @@
 #endif
 
 #include "ziglike/detail/abort.h"
+#include "ziglike/detail/is_container.h"
 
 #ifdef ZIGLIKE_USE_FMT
 #include <fmt/core.h>
@@ -40,6 +42,46 @@ template <typename T> class slice
         m_elements = size;
     }
 
+    using TNonConst = typename std::conditional_t<std::is_const_v<T>,
+                                                  std::remove_const_t<T>, T>;
+    using TConst = typename std::conditional_t<std::is_const_v<T>, T, const T>;
+
+    struct inner_constructor_t
+    {};
+    template <typename U>
+    inline constexpr slice(inner_constructor_t,
+                           const slice<U> &other) ZIGLIKE_NOEXCEPT
+    {
+        static_assert(std::is_const_v<T> ||
+                          (!std::is_const_v<U> && !std::is_const_v<T>),
+                      "Instantiated const cast inner constructor incorrectly");
+        m_data = const_cast<T *>(other.m_data);
+        m_elements = other.m_elements;
+    }
+
+    struct inner_single_constructor_t
+    {};
+    template <typename U = T>
+    inline constexpr slice(inner_single_constructor_t,
+                           const U &item) ZIGLIKE_NOEXCEPT
+    {
+        static_assert(
+            std::is_const_v<T> || (!std::is_const_v<U> && !std::is_const_v<T>),
+            "Instantiated const cast inner single constructor incorrectly");
+        m_data = const_cast<T *>(std::addressof(item));
+        m_elements = 1;
+    }
+
+    /// Struct whose only purpose to exist in parameter lists as a way of doing
+    /// enable_if...
+    struct uninstantiable
+    {
+        friend struct slice;
+
+      private:
+        uninstantiable() = default;
+    };
+
   public:
     using type = T;
 
@@ -47,23 +89,16 @@ template <typename T> class slice
     struct iterator;
     struct const_iterator;
 
-    // make an iterable container
-    inline constexpr iterator begin() ZIGLIKE_NOEXCEPT
-    {
-        return iterator(m_data);
-    }
-    inline constexpr iterator end() ZIGLIKE_NOEXCEPT
-    {
-        return iterator(m_data + m_elements);
-    }
+    using correct_iterator =
+        std::conditional_t<std::is_const_v<T>, const_iterator, iterator>;
 
-    inline constexpr const_iterator begin() const ZIGLIKE_NOEXCEPT
+    inline constexpr correct_iterator begin() const ZIGLIKE_NOEXCEPT
     {
-        return const_iterator(m_data);
+        return correct_iterator(m_data);
     }
-    inline constexpr const_iterator end() const ZIGLIKE_NOEXCEPT
+    inline constexpr correct_iterator end() const ZIGLIKE_NOEXCEPT
     {
-        return const_iterator(m_data + m_elements);
+        return correct_iterator(m_data + m_elements);
     }
 #endif
 
@@ -78,15 +113,55 @@ template <typename T> class slice
     }
 
     /// Wrap a contiguous stdlib container which has data() and size() functions
-    template <typename Container>
-    inline constexpr slice<T>(Container &container) ZIGLIKE_NOEXCEPT
-        : slice(container.data(), container.size())
+    template <typename U>
+    inline constexpr slice(
+        U &other, std::enable_if_t<detail::is_container_v<U> &&
+                                       !detail::is_instance<U, slice>::value,
+                                   uninstantiable> = {}) ZIGLIKE_NOEXCEPT
+    {
+        static_assert(!std::is_same_v<U, slice>,
+                      "incorrect constructor selected");
+        static_assert(!std::is_same_v<U, slice<TNonConst>>,
+                      "incorrect constructor selected");
+        static_assert(!std::is_same_v<U, T>, "incorrect constructor selected");
+        static_assert(!std::is_same_v<U, TNonConst>,
+                      "incorrect constructor selected");
+        m_data = other.data();
+        m_elements = other.size();
+    }
+
+    /// A slice can always be constructed from a nonconst variant of itself
+    template <typename U>
+    inline constexpr slice(
+        U &other,
+        std::enable_if_t<std::is_same_v<slice<TNonConst>, U>, uninstantiable> =
+            {}) ZIGLIKE_NOEXCEPT : slice(inner_constructor_t{}, other)
     {
     }
 
-    template <>
-    inline constexpr slice(const slice &other) ZIGLIKE_NOEXCEPT
-        : slice(other.data(), other.size())
+    /// A slice can always be constructed from a non-const reference to a T.
+    template <typename U>
+    inline constexpr slice(
+        U &other,
+        std::enable_if_t<std::is_same_v<TNonConst, U>, uninstantiable> = {})
+        ZIGLIKE_NOEXCEPT : slice(inner_single_constructor_t{}, other)
+    {
+    }
+
+    /// If type is const, then we can be constructed from const
+    template <typename MaybeT = T>
+    inline constexpr slice(
+        std::enable_if_t<std::is_const_v<MaybeT>, const slice &> other)
+        ZIGLIKE_NOEXCEPT : slice(inner_constructor_t{}, other)
+    {
+    }
+
+    /// Construct from a const reference to T ONLY if T is const. If it is
+    /// non-const, then we can only be constructed from non-const references
+    template <typename MaybeT = T>
+    inline constexpr slice(
+        std::enable_if_t<std::is_const_v<MaybeT>, MaybeT &> other)
+        ZIGLIKE_NOEXCEPT : slice(inner_single_constructor_t{}, other)
     {
     }
 

@@ -1,7 +1,19 @@
 #include "test_header.h"
 // test header must be first
+#include "ziglike/detail/is_container.h"
 #include "ziglike/slice.h"
 #include <array>
+#include <vector>
+
+static_assert(
+    zl::detail::is_container_v<std::array<int, 1>>,
+    "is_container not properly detecting size() and data() functions");
+
+static_assert(
+    zl::detail::is_container_v<std::vector<int>>,
+    "is_container not properly detecting size() and data() functions");
+
+static_assert(!zl::detail::is_container_v<int>, "int registered as container?");
 
 using namespace zl;
 
@@ -38,6 +50,44 @@ TEST_SUITE("slice")
                           "it is non-nullable");
             // not allowed
             // slice<uint8_t> slice_2;
+        }
+
+        SUBCASE("construct from single item")
+        {
+            int oneint[1] = {0};
+
+            zl::slice<int> ints(oneint[0]);
+            REQUIRE(ints.size() == 1);
+            for (int i : ints)
+                REQUIRE(i == oneint[0]);
+
+            zl::slice<const int> ints_const(oneint[0]);
+            REQUIRE(ints.size() == 1);
+            const int oneint_const[1] = {0};
+            ints_const = oneint[0];
+            REQUIRE(ints.size() == 1);
+        }
+
+        SUBCASE("const correctness")
+        {
+            int oneint[1] = {0};
+            zl::slice<int> ints(oneint[0]);
+            static_assert(std::is_same_v<int *, decltype(ints.data())>);
+
+            zl::slice<const int> ints_const(oneint[0]);
+            static_assert(
+                std::is_same_v<const int *, decltype(ints_const.data())>);
+
+            auto get_nonconst_by_const_ref = [](const zl::slice<int> &guy) {
+                static_assert(std::is_same_v<decltype(guy.data()), int *>);
+                return guy;
+            };
+
+            auto copy = get_nonconst_by_const_ref(ints);
+            static_assert(std::is_same_v<decltype(copy.data()), int *>);
+
+            zl::slice<const int> cint_1((const int &)oneint[0]);
+            zl::slice<const int> cint_2(cint_1);
         }
 
         SUBCASE("empty subslice")

@@ -43,8 +43,9 @@ TEST_SUITE("stdmem")
             REQUIRE(std::snprintf(chars.data(), chars.size(), "%s", string) ==
                     length);
 
-            auto strslice = raw_slice(*string, length);
-            auto array_strslice = raw_slice<const char>(*chars.data(), length);
+            zl::slice<const char> strslice = raw_slice(*string, length);
+            zl::slice<const char> array_strslice =
+                raw_slice<const char>(*chars.data(), length);
             REQUIRE(memcompare(strslice, array_strslice));
         }
 
