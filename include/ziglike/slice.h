@@ -302,7 +302,9 @@ template <typename T> class slice
     };
 #endif
 
-    friend constexpr inline slice zl::raw_slice(T &data, size_t size) noexcept;
+    template <typename U>
+    friend constexpr inline slice zl::raw_slice(U &data,
+                                                size_t size) ZIGLIKE_NOEXCEPT;
 #ifdef ZIGLIKE_USE_FMT
     friend struct fmt::formatter<slice>;
 #endif
@@ -311,7 +313,8 @@ template <typename T> class slice
 /// Construct a slice point to a buffer of memory. Requires that data is not
 /// nullptr. Aborts the program if data is nullptr.
 template <typename T>
-[[nodiscard]] constexpr inline slice<T> raw_slice(T &data, size_t size) noexcept
+[[nodiscard]] constexpr inline slice<T> raw_slice(T &data,
+                                                  size_t size) ZIGLIKE_NOEXCEPT
 {
     return slice<T>(std::addressof(data), size);
 }
