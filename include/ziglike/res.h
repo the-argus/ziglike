@@ -171,8 +171,6 @@ template <typename T, typename StatusCode> class res
                                              T>)&&std::is_same_v<ThisType, res>,
                                         ThisType> &other) ZIGLIKE_NOEXCEPT
     {
-        if (&other == this) [[unlikely]]
-            return *this;
         if (other.okay()) {
             if constexpr (is_reference) {
                 m.value.some = other.m.value.some.item;
@@ -181,7 +179,6 @@ template <typename T, typename StatusCode> class res
             }
         }
         m.status = other.m.status;
-        return *this;
     }
 
     // Result cannot be assigned to, only constructed and then released.
