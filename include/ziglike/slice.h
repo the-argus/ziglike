@@ -302,8 +302,8 @@ template <typename T> class slice
     };
 #endif
 
-    friend constexpr inline slice zl::raw_slice<>(T &data,
-                                                size_t size) ZIGLIKE_NOEXCEPT;
+    friend constexpr slice zl::raw_slice<>(T &data,
+                                           size_t size) ZIGLIKE_NOEXCEPT;
 #ifdef ZIGLIKE_USE_FMT
     friend struct fmt::formatter<slice>;
 #endif
