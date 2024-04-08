@@ -56,25 +56,27 @@ TEST_SUITE("slice")
         {
             int oneint[1] = {0};
 
-            zl::slice<int> ints(oneint[0]);
+            zl::slice<int> ints = zl::slice<int>::from_one((int&)oneint[0]);
             REQUIRE(ints.size() == 1);
             for (int i : ints)
                 REQUIRE(i == oneint[0]);
 
-            zl::slice<const int> ints_const(oneint[0]);
+            zl::slice<const int> ints_const =
+                zl::slice<int>::from_one(oneint[0]);
             REQUIRE(ints.size() == 1);
             const int oneint_const[1] = {0};
-            ints_const = oneint[0];
+            ints_const = zl::slice<int>::from_one(oneint[0]);
             REQUIRE(ints.size() == 1);
         }
 
         SUBCASE("const correctness")
         {
             int oneint[1] = {0};
-            zl::slice<int> ints(oneint[0]);
+            zl::slice<int> ints = zl::slice<int>::from_one(oneint[0]);
             static_assert(std::is_same_v<int *, decltype(ints.data())>);
 
-            zl::slice<const int> ints_const(oneint[0]);
+            zl::slice<const int> ints_const =
+                zl::slice<int>::from_one((int&)oneint[0]);
             static_assert(
                 std::is_same_v<const int *, decltype(ints_const.data())>);
 
@@ -86,7 +88,8 @@ TEST_SUITE("slice")
             auto copy = get_nonconst_by_const_ref(ints);
             static_assert(std::is_same_v<decltype(copy.data()), int *>);
 
-            zl::slice<const int> cint_1((const int &)oneint[0]);
+            zl::slice<const int> cint_1 =
+                zl::slice<const int>::from_one((const int &)oneint[0]);
             zl::slice<const int> cint_2(cint_1);
         }
 
