@@ -27,6 +27,7 @@ const test_source_files = &[_][]const u8{
     "opt/opt.cpp",
     "res/res.cpp",
     "slice/slice.cpp",
+    "joined_slice/joined_slice.cpp",
     "factory/factory.cpp",
     "status/status.cpp",
     "defer/defer.cpp",
