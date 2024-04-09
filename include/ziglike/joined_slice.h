@@ -39,22 +39,16 @@ template <typename T> class joined_slice
   public:
     using type = T;
 
-#ifndef ZIGLIKE_SLICE_NO_ITERATOR
     struct iterator;
-    struct const_iterator;
 
-    using correct_iterator =
-        std::conditional_t<std::is_const_v<T>, const_iterator, iterator>;
-
-    inline constexpr correct_iterator begin() const ZIGLIKE_NOEXCEPT
+    inline constexpr iterator begin() const ZIGLIKE_NOEXCEPT
     {
-        return correct_iterator(m_slices, Iterpoint::Begin);
+        return iterator(m_slices, Iterpoint::Begin);
     }
-    inline constexpr correct_iterator end() const ZIGLIKE_NOEXCEPT
+    inline constexpr iterator end() const ZIGLIKE_NOEXCEPT
     {
-        return correct_iterator(m_slices, Iterpoint::End);
+        return iterator(m_slices, Iterpoint::End);
     }
-#endif
 
     // Non-templated constructor allowing conversion from a const slice of
     // slices to a joined slice. A conversion from a non-const slice of slices
@@ -114,6 +108,88 @@ template <typename T> class joined_slice
     operator!=(const joined_slice &a, const joined_slice &b) ZIGLIKE_NOEXCEPT
     {
         return a.m_slices != b.m_slices;
+    };
+
+    struct iterator
+    {
+        using iterator_category = std::forward_iterator_tag;
+        using difference_type = std::ptrdiff_t;
+        using value_type = T;
+        using pointer = value_type *;
+        using reference = value_type &;
+
+        inline constexpr pointer ptr() ZIGLIKE_NOEXCEPT
+        {
+            assert(m_slice_index < m_slices.size());
+            assert(m_item_index < m_slices.data()[m_slice_index].size());
+            return std::addressof(
+                m_slices.data()[m_slice_index].data()[m_item_index]);
+        }
+
+        inline constexpr iterator(slice<const slice<T>> slices,
+                                  Iterpoint iterpoint) ZIGLIKE_NOEXCEPT
+            : m_slices(slices)
+        {
+            switch (iterpoint) {
+            case Iterpoint::Begin:
+                m_slice_index = 0;
+                m_item_index = 0;
+                break;
+            case Iterpoint::End:
+                m_slice_index = slices.size() - 1;
+                m_item_index = slices.data()[m_slice_index].size();
+                break;
+            }
+        }
+
+        inline constexpr reference operator*() const ZIGLIKE_NOEXCEPT
+        {
+            return *ptr();
+        }
+
+        inline constexpr pointer operator->() ZIGLIKE_NOEXCEPT { return ptr(); }
+
+        // Prefix increment
+        inline constexpr iterator &operator++() ZIGLIKE_NOEXCEPT
+        {
+            ++m_item_index;
+            if (m_slices.data()[m_slice_index].size() <= m_item_index &&
+                m_slices.size() > m_slice_index + 1) {
+                ++m_slice_index;
+                m_item_index = 0;
+            }
+            return *this;
+        }
+
+        // Postfix increment
+        // NOLINTNEXTLINE
+        inline constexpr iterator operator++(int) ZIGLIKE_NOEXCEPT
+        {
+            iterator tmp = *this;
+            ++(*this);
+            return tmp;
+        }
+
+        inline constexpr friend bool
+        operator==(const iterator &a, const iterator &b) ZIGLIKE_NOEXCEPT
+        {
+            return a.m_slices == b.m_slices &&
+                   a.m_slice_index == b.m_slice_index &&
+                   a.m_item_index == b.m_item_index;
+        };
+
+        inline constexpr friend bool
+        operator!=(const iterator &a, const iterator &b) ZIGLIKE_NOEXCEPT
+        {
+            return a.m_slices != b.m_slices &&
+                   a.m_slice_index != b.m_slice_index &&
+                   a.m_item_index != b.m_item_index;
+        };
+
+      private:
+        size_t m_slice_index;
+        size_t m_item_index;
+        slice<const slice<T>> m_slices;
     };
 };
 } // namespace zl

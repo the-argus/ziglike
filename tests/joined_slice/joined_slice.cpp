@@ -32,6 +32,8 @@ TEST_SUITE("joined_slice")
 
             zl::slice<zl::slice<int>> slice_of_slices = slices;
 
+            // BUG: this constructor doesn't work when this is const int instead
+            // of int, same for std::array
             zl::joined_slice<int> joined(slices);
             zl::joined_slice<int> joined_2(slice_of_slices);
         }
@@ -44,9 +46,25 @@ TEST_SUITE("joined_slice")
             zl::slice<zl::slice<const int>> nonconst_slice_of_slices = slices;
 
             zl::joined_slice<const int> const_joined(slice_of_slices);
-            zl::joined_slice<const int> nonconst_joined(nonconst_slice_of_slices);
+            zl::joined_slice<const int> nonconst_joined(
+                nonconst_slice_of_slices);
 
             zl::joined_slice<const int> const_version(nonconst_joined);
+        }
+    }
+
+    TEST_CASE("functionality")
+    {
+        SUBCASE("iterate over nonconst")
+        {
+            std::array<int, 10> mem;
+            std::array<zl::slice<int>, 4> slices = {mem, mem, mem, mem};
+
+            zl::joined_slice<int> ints(slices);
+
+            for (int i : ints) {
+
+            }
         }
     }
 }
