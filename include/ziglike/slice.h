@@ -133,9 +133,12 @@ template <typename T> class slice
     /// Wrap a contiguous stdlib container which has data() and size() functions
     template <typename U>
     inline constexpr slice(
-        U &other, std::enable_if_t<detail::is_container_v<U> &&
-                                       !detail::is_instance<U, slice>::value,
-                                   uninstantiable> = {}) ZIGLIKE_NOEXCEPT
+        U &other, std::enable_if_t<
+                      detail::is_container_v<U> &&
+                          !detail::is_instance<U, slice>::value &&
+                          (std::is_same_v<typename U::value_type, TConst> ||
+                           std::is_same_v<typename U::value_type, TNonConst>),
+                      uninstantiable> = {}) ZIGLIKE_NOEXCEPT
     {
         static_assert(!std::is_same_v<U, slice>,
                       "incorrect constructor selected");

@@ -39,12 +39,14 @@ TEST_SUITE("joined_slice")
         SUBCASE("const correctness during construction")
         {
             std::array<int, 10> mem;
-            std::array<zl::slice<int>, 4> slices = {mem, mem, mem, mem};
-            zl::slice<const zl::slice<int>> slice_of_slices = slices;
-            zl::slice<zl::slice<int>> nonconst_slice_of_slices = slices;
+            std::array<zl::slice<const int>, 4> slices = {mem, mem, mem, mem};
+            zl::slice<const zl::slice<const int>> slice_of_slices = slices;
+            zl::slice<zl::slice<const int>> nonconst_slice_of_slices = slices;
 
             zl::joined_slice<const int> const_joined(slice_of_slices);
-            zl::joined_slice<int> nonconst_joined(nonconst_slice_of_slices);
+            zl::joined_slice<const int> nonconst_joined(nonconst_slice_of_slices);
+
+            zl::joined_slice<const int> const_version(nonconst_joined);
         }
     }
 }

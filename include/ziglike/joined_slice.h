@@ -56,8 +56,33 @@ template <typename T> class joined_slice
     }
 #endif
 
-    inline constexpr joined_slice(slice<const slice<TNonConst>> slices) noexcept
-        : m_slices(slices) ZIGLIKE_NOEXCEPT
+    // Non-templated constructor allowing conversion from a const slice of
+    // slices to a joined slice. A conversion from a non-const slice of slices
+    // is not provided because it would cause ambiguity. This constructor only
+    // exists to allow for std::array and std::vector to be implicitly converted
+    // into a joined slice
+    inline constexpr joined_slice(slice<const slice<TNonConst>> slices)
+        ZIGLIKE_NOEXCEPT : m_slices(slices)
+    {
+    }
+
+    template <typename U>
+    inline constexpr joined_slice(
+        U slices,
+        std::enable_if_t<std::is_same_v<slice<const slice<TNonConst>>, U> ||
+                             std::is_same_v<slice<slice<TNonConst>>, U>,
+                         uninstantiable> = {}) ZIGLIKE_NOEXCEPT
+        : m_slices(slices)
+    {
+    }
+
+    template <typename U>
+    inline constexpr joined_slice(
+        U slices,
+        std::enable_if_t<
+            (std::is_same_v<U, slice<const slice<TConst>>> ||
+             std::is_same_v<U, slice<slice<TConst>>>)&&std::is_const_v<T>,
+            uninstantiable> = {}) ZIGLIKE_NOEXCEPT : m_slices(slices)
     {
     }
 
@@ -65,6 +90,14 @@ template <typename T> class joined_slice
     /// itself
     inline constexpr joined_slice(joined_slice<TNonConst> other)
         ZIGLIKE_NOEXCEPT : m_slices(other.m_slices)
+    {
+    }
+
+    template <typename U>
+    inline constexpr joined_slice(
+        U other, std::enable_if_t<std::is_same_v<U, joined_slice<TConst>> &&
+                                      std::is_const_v<T>,
+                                  uninstantiable> = {}) ZIGLIKE_NOEXCEPT
     {
     }
 
