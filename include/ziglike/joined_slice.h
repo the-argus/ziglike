@@ -118,7 +118,7 @@ template <typename T> class joined_slice
         using pointer = value_type *;
         using reference = value_type &;
 
-        inline constexpr pointer ptr() ZIGLIKE_NOEXCEPT
+        inline constexpr pointer ptr() const ZIGLIKE_NOEXCEPT
         {
             assert(m_slice_index < m_slices.size());
             assert(m_item_index < m_slices.data()[m_slice_index].size());
@@ -136,8 +136,8 @@ template <typename T> class joined_slice
                 m_item_index = 0;
                 break;
             case Iterpoint::End:
-                m_slice_index = slices.size() - 1;
-                m_item_index = slices.data()[m_slice_index].size();
+                m_slice_index = slices.size();
+                m_item_index = 0;
                 break;
             }
         }
@@ -147,14 +147,19 @@ template <typename T> class joined_slice
             return *ptr();
         }
 
-        inline constexpr pointer operator->() ZIGLIKE_NOEXCEPT { return ptr(); }
+        inline constexpr pointer operator->() const ZIGLIKE_NOEXCEPT
+        {
+            return ptr();
+        }
 
         // Prefix increment
         inline constexpr iterator &operator++() ZIGLIKE_NOEXCEPT
         {
+            assert(m_slices.size() != 0);
+            if (m_slices.size() == 0) [[unlikely]]
+                std::abort();
             ++m_item_index;
-            if (m_slices.data()[m_slice_index].size() <= m_item_index &&
-                m_slices.size() > m_slice_index + 1) {
+            if (m_slices.data()[m_slice_index].size() <= m_item_index) {
                 ++m_slice_index;
                 m_item_index = 0;
             }
@@ -181,8 +186,8 @@ template <typename T> class joined_slice
         inline constexpr friend bool
         operator!=(const iterator &a, const iterator &b) ZIGLIKE_NOEXCEPT
         {
-            return a.m_slices != b.m_slices &&
-                   a.m_slice_index != b.m_slice_index &&
+            return a.m_slices != b.m_slices ||
+                   a.m_slice_index != b.m_slice_index ||
                    a.m_item_index != b.m_item_index;
         };
 

@@ -57,14 +57,22 @@ TEST_SUITE("joined_slice")
     {
         SUBCASE("iterate over nonconst")
         {
-            std::array<int, 10> mem;
+            std::array<int, 10> mem{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
             std::array<zl::slice<int>, 4> slices = {mem, mem, mem, mem};
 
             zl::joined_slice<int> ints(slices);
 
-            for (int i : ints) {
+            REQUIRE(ints.begin() != ints.end());
 
+            int expected = 0;
+            size_t count = 0;
+            for (int i : ints) {
+                REQUIRE(i == expected);
+                ++expected;
+                expected %= mem.size();
+                ++count;
             }
+            REQUIRE(count == mem.size() * slices.size());
         }
     }
 }
