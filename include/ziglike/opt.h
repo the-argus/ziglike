@@ -25,11 +25,11 @@ template <typename T> class opt
 {
   public:
     // type constraints
-    static_assert(
-        (!std::is_reference<T>::value && std::is_nothrow_destructible_v<T>) ||
-            (std::is_reference<T>::value && std::is_lvalue_reference_v<T>),
-        "Optional type must be either nothrow destructible or an "
-        "lvalue reference type.");
+    static_assert((!std::is_reference_v<T> &&
+                   std::is_nothrow_destructible_v<T>) ||
+                      (std::is_reference_v<T> && std::is_lvalue_reference_v<T>),
+                  "Optional type must be either nothrow destructible or an "
+                  "lvalue reference type.");
 
 #ifndef ZIGLIKE_OPTIONAL_ALLOW_POINTERS
     static_assert(!std::is_pointer_v<T>,
@@ -37,7 +37,7 @@ template <typename T> class opt
                   "optional. Maybe make an optional reference instead?");
 #endif
 
-    static constexpr bool is_reference = std::is_lvalue_reference<T>::value;
+    static constexpr bool is_reference = std::is_lvalue_reference_v<T>;
 
     static_assert(is_reference || !std::is_const_v<T>,
                   "Attempt to create optional with const non-reference type. "
@@ -71,15 +71,14 @@ template <typename T> class opt
     {
         size_t elements;
         // propagate const-ness of slice
-        typename std::conditional<std::is_const_v<typename T::type>,
-                                  const typename T::type *,
-                                  typename T::type *>::type data;
+        std::conditional_t<std::is_const_v<typename T::type>,
+                           const typename T::type *, typename T::type *>
+            data;
     };
 
-    using members_t = typename std::conditional<
+    using members_t = std::conditional_t<
         is_reference, members_ref,
-        typename std::conditional<is_slice, members_slice,
-                                  members>::type>::type;
+        std::conditional_t<is_slice, members_slice, members>>;
 #else
     using members_t =
         typename std::conditional<is_reference, members_ref, members>::type;
@@ -106,8 +105,8 @@ template <typename T> class opt
 
     /// Extract the inner value of the optional, or abort the program. Check
     /// has_value() before calling this.
-    [[nodiscard]] inline typename std::conditional<is_reference, T, T &>::type
-    value() ZIGLIKE_NOEXCEPT
+    [[nodiscard]] inline std::conditional_t<is_reference, T, T &>
+        value() & ZIGLIKE_NOEXCEPT
     {
         if (!has_value()) [[unlikely]] {
             ZIGLIKE_ABORT();
@@ -125,8 +124,27 @@ template <typename T> class opt
         }
     }
 
-    inline typename std::conditional<is_reference, const T, const T &>::type
-    value_const() const ZIGLIKE_NOEXCEPT
+    [[nodiscard]] inline std::conditional_t<is_reference, T, T &&>
+        value() && ZIGLIKE_NOEXCEPT
+    {
+        if (!has_value()) [[unlikely]] {
+            ZIGLIKE_ABORT();
+        }
+        if constexpr (is_reference) {
+            return *m.pointer;
+        } else
+#ifndef ZIGLIKE_NO_SMALL_OPTIONAL_SLICE
+            if constexpr (is_slice) {
+            return std::move(*reinterpret_cast<T *>(&m));
+        } else
+#endif
+        {
+            return std::move(m.value.some);
+        }
+    }
+
+    inline std::conditional_t<is_reference, const T, const T &>
+    value() const &ZIGLIKE_NOEXCEPT
     {
         if (!has_value()) [[unlikely]] {
             ZIGLIKE_ABORT();
@@ -144,13 +162,8 @@ template <typename T> class opt
         }
     }
 
-    /// Extract the inner value of the optional, or abort the program. Check
-    /// has_value() before calling this.
-    inline typename std::conditional<is_reference, const T, const T &>::type
-    value() const ZIGLIKE_NOEXCEPT
-    {
-        return value_const();
-    }
+    inline std::conditional_t<is_reference, const T, const T &&>
+    value() const &&ZIGLIKE_NOEXCEPT = delete;
 
     /// Call destructor of internal type, or just reset it if it doesnt have one
     inline void reset() ZIGLIKE_NOEXCEPT
@@ -287,14 +300,13 @@ template <typename T> class opt
 
     // copy constructor
     template <typename MaybeT = T>
-    inline constexpr opt(
-        const typename std::enable_if_t<
+    inline constexpr opt(const typename std::enable_if_t<
 #ifndef ZIGLIKE_NO_SMALL_OPTIONAL_SLICE
-            is_slice ||
+                         is_slice ||
 #endif
-                (!is_reference &&
-                 std::is_constructible_v<MaybeT, const MaybeT &>),
-            MaybeT> &something) ZIGLIKE_NOEXCEPT
+                             (!is_reference &&
+                              std::is_constructible_v<MaybeT, const MaybeT &>),
+                         MaybeT> &something) ZIGLIKE_NOEXCEPT
     {
 #ifndef ZIGLIKE_NO_SMALL_OPTIONAL_SLICE
         if constexpr (is_slice) {

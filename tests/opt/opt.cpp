@@ -177,6 +177,36 @@ TEST_SUITE("opt")
             REQUIRE(mvec.has_value());
         }
 
+        SUBCASE("safely return copies from value optionals")
+        {
+            const auto get_maybe_int = []() -> opt<int> { return 1; };
+
+            static_assert(
+                std::is_same_v<decltype(get_maybe_int().value()), int &&>);
+
+            int my_int = get_maybe_int().value();
+            my_int++;
+            if (my_int == 2)
+                printf("no asan!\n");
+        }
+
+        SUBCASE("safely return copies from slice optionals")
+        {
+            std::array<uint8_t, 512> mem;
+            const auto get_maybe_slice = [&mem]() -> opt<slice<uint8_t>> {
+                return slice<uint8_t>(mem);
+            };
+
+            static_assert(std::is_same_v<decltype(get_maybe_slice().value()),
+                                         slice<uint8_t> &&>);
+
+            slice<uint8_t> my_slice = get_maybe_slice().value();
+            std::fill(my_slice.begin(), my_slice.end(), 0);
+            for (auto byte : mem) {
+                REQUIRE(byte == 0);
+            }
+        }
+
 #ifndef ZIGLIKE_NO_SMALL_OPTIONAL_SLICE
         SUBCASE("emplace slice types")
         {
