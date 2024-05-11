@@ -55,8 +55,8 @@ template <typename T> class slice
         static_assert(std::is_const_v<T> ||
                           (!std::is_const_v<U> && !std::is_const_v<T>),
                       "Instantiated const cast inner constructor incorrectly");
-        m_data = const_cast<T *>(other.m_data);
-        m_elements = other.m_elements;
+        m_data = const_cast<T *>(other.data());
+        m_elements = other.size();
     }
 
     struct inner_single_constructor_t
@@ -81,6 +81,24 @@ template <typename T> class slice
       private:
         uninstantiable() = default;
     };
+
+    /// Internally, a slice can always be constructed from a non-const reference
+    /// to a T.
+    template <typename U>
+    inline constexpr slice(
+        U &other,
+        std::enable_if_t<std::is_same_v<TNonConst, U>, uninstantiable> = {})
+        ZIGLIKE_NOEXCEPT : slice(inner_single_constructor_t{}, other)
+    {
+    }
+    /// Construct from a const reference to T ONLY if T is const. If it is
+    /// non-const, then we can only be constructed from non-const references
+    template <typename MaybeT = T>
+    inline constexpr slice(
+        std::enable_if_t<std::is_const_v<MaybeT>, MaybeT &> other)
+        ZIGLIKE_NOEXCEPT : slice(inner_single_constructor_t{}, other)
+    {
+    }
 
   public:
     using type = T;
@@ -115,9 +133,12 @@ template <typename T> class slice
     /// Wrap a contiguous stdlib container which has data() and size() functions
     template <typename U>
     inline constexpr slice(
-        U &other, std::enable_if_t<detail::is_container_v<U> &&
-                                       !detail::is_instance<U, slice>::value,
-                                   uninstantiable> = {}) ZIGLIKE_NOEXCEPT
+        U &other, std::enable_if_t<
+                      detail::is_container_v<U> &&
+                          !detail::is_instance<U, slice>::value &&
+                          (std::is_same_v<typename U::value_type, TConst> ||
+                           std::is_same_v<typename U::value_type, TNonConst>),
+                      uninstantiable> = {}) ZIGLIKE_NOEXCEPT
     {
         static_assert(!std::is_same_v<U, slice>,
                       "incorrect constructor selected");
@@ -130,21 +151,30 @@ template <typename T> class slice
         m_elements = other.size();
     }
 
+    template <typename U>
+    static inline slice from_one(
+        U &single_item,
+        std::enable_if_t<std::is_same_v<TNonConst, U>, uninstantiable> = {})
+        ZIGLIKE_NOEXCEPT
+    {
+        return slice(single_item);
+    }
+
+    template <typename U>
+    static inline slice
+    from_one(U &single_item,
+             std::enable_if_t<std::is_same_v<TConst, U> && std::is_const_v<T>,
+                              uninstantiable> = {}) ZIGLIKE_NOEXCEPT
+    {
+        return slice(single_item);
+    }
+
     /// A slice can always be constructed from a nonconst variant of itself
     template <typename U>
     inline constexpr slice(
-        U &other,
+        U other,
         std::enable_if_t<std::is_same_v<slice<TNonConst>, U>, uninstantiable> =
             {}) ZIGLIKE_NOEXCEPT : slice(inner_constructor_t{}, other)
-    {
-    }
-
-    /// A slice can always be constructed from a non-const reference to a T.
-    template <typename U>
-    inline constexpr slice(
-        U &other,
-        std::enable_if_t<std::is_same_v<TNonConst, U>, uninstantiable> = {})
-        ZIGLIKE_NOEXCEPT : slice(inner_single_constructor_t{}, other)
     {
     }
 
@@ -153,15 +183,6 @@ template <typename T> class slice
     inline constexpr slice(
         std::enable_if_t<std::is_const_v<MaybeT>, const slice &> other)
         ZIGLIKE_NOEXCEPT : slice(inner_constructor_t{}, other)
-    {
-    }
-
-    /// Construct from a const reference to T ONLY if T is const. If it is
-    /// non-const, then we can only be constructed from non-const references
-    template <typename MaybeT = T>
-    inline constexpr slice(
-        std::enable_if_t<std::is_const_v<MaybeT>, MaybeT &> other)
-        ZIGLIKE_NOEXCEPT : slice(inner_single_constructor_t{}, other)
     {
     }
 
