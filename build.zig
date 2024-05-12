@@ -32,6 +32,7 @@ const test_source_files = &[_][]const u8{
     "status/status.cpp",
     "defer/defer.cpp",
     "stdmem/stdmem.cpp",
+    "enumerate/enumerate.cpp",
 };
 
 pub fn build(b: *std.Build) !void {

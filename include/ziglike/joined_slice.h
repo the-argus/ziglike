@@ -38,6 +38,7 @@ template <typename T> class joined_slice
 
   public:
     using type = T;
+    using value_type = T;
 
     struct iterator;
 

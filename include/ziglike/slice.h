@@ -102,6 +102,7 @@ template <typename T> class slice
 
   public:
     using type = T;
+    using value_type = T;
 
 #ifndef ZIGLIKE_SLICE_NO_ITERATOR
     struct iterator;
