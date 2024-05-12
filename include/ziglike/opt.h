@@ -105,8 +105,7 @@ template <typename T> class opt
 
     /// Extract the inner value of the optional, or abort the program. Check
     /// has_value() before calling this.
-    [[nodiscard]] inline std::conditional_t<is_reference, T, T &>
-        value() & ZIGLIKE_NOEXCEPT
+    [[nodiscard]] inline T &value() & ZIGLIKE_NOEXCEPT
     {
         if (!has_value()) [[unlikely]] {
             ZIGLIKE_ABORT();
@@ -124,8 +123,7 @@ template <typename T> class opt
         }
     }
 
-    [[nodiscard]] inline std::conditional_t<is_reference, T, T &&>
-        value() && ZIGLIKE_NOEXCEPT
+    [[nodiscard]] inline T &&value() && ZIGLIKE_NOEXCEPT
     {
         if (!has_value()) [[unlikely]] {
             ZIGLIKE_ABORT();
@@ -143,8 +141,7 @@ template <typename T> class opt
         }
     }
 
-    inline std::conditional_t<is_reference, const T, const T &>
-    value() const &ZIGLIKE_NOEXCEPT
+    inline const T &value() const &ZIGLIKE_NOEXCEPT
     {
         if (!has_value()) [[unlikely]] {
             ZIGLIKE_ABORT();
@@ -161,9 +158,6 @@ template <typename T> class opt
             return std::ref(m.value.some);
         }
     }
-
-    inline std::conditional_t<is_reference, const T, const T &&>
-    value() const &&ZIGLIKE_NOEXCEPT = delete;
 
     /// Call destructor of internal type, or just reset it if it doesnt have one
     inline void reset() ZIGLIKE_NOEXCEPT
