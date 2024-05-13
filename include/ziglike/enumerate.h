@@ -62,7 +62,7 @@ template <typename T> struct value_enumeration
     static_assert(sizeof(T) <= sizeof(T &));
 
   private:
-    T m_item;
+    const T m_item;
     const size_t m_index;
 
   public:
@@ -130,7 +130,7 @@ struct std::tuple_element<1, zl::const_reference_enumeration<T>>
 // NOLINTNEXTLINE
 template <class T> struct std::tuple_element<0, zl::value_enumeration<T>>
 {
-    using type = T;
+    using type = const T;
 };
 // NOLINTNEXTLINE
 template <class T> struct std::tuple_element<1, zl::value_enumeration<T>>

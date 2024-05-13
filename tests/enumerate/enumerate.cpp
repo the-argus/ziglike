@@ -18,7 +18,7 @@ TEST_SUITE("enumerate")
 
             size_t i = 0;
             for (auto [item, index] : enumerate(ints)) {
-                static_assert(std::is_same_v<decltype(item), int>);
+                static_assert(std::is_same_v<decltype(item), const int>);
                 static_assert(std::is_same_v<decltype(index), const size_t>);
 
                 REQUIRE(item == 0);
@@ -107,7 +107,7 @@ TEST_SUITE("enumerate")
 
             size_t i = 0;
             for (auto [item, index] : enumerate(mem)) {
-                static_assert(std::is_same_v<decltype(item), uint8_t>);
+                static_assert(std::is_same_v<decltype(item), const uint8_t>);
                 REQUIRE(item == 0);
                 REQUIRE(index == i);
                 ++i;
