@@ -153,7 +153,6 @@ class enumerator
 
   public:
     struct iterator;
-    struct const_iterator;
 
     template <typename U = Iterable>
     inline constexpr enumerator(std::enable_if_t<owns, U &&> iterable)
@@ -171,16 +170,6 @@ class enumerator
     inline constexpr enumerator(std::enable_if_t<!owns, U &> iterable)
         : m_iterable(std::forward<decltype(iterable)>(iterable))
     {
-    }
-
-    inline constexpr const_iterator begin() const ZIGLIKE_NOEXCEPT
-    {
-        return const_iterator(m_iterable.begin(), 0);
-    }
-
-    inline constexpr const_iterator end() const ZIGLIKE_NOEXCEPT
-    {
-        return const_iterator(m_iterable.end(), m_iterable.size());
     }
 
     inline constexpr iterator begin() ZIGLIKE_NOEXCEPT
@@ -229,14 +218,14 @@ class enumerator
         {
         }
 
-        using reference_enumeration_type =
-            std::conditional_t<is_const,
-                               const_reference_enumeration<value_type>,
-                               reference_enumeration<value_type>>;
-        using enumeration_type =
+        using const_enumeration_type =
             std::conditional_t<sizeof(value_type) <= sizeof(value_type *),
                                value_enumeration<value_type>,
-                               reference_enumeration_type>;
+                               const_reference_enumeration<value_type>>;
+
+        using enumeration_type =
+            std::conditional_t<is_const, const_enumeration_type,
+                               reference_enumeration<value_type>>;
 
         inline constexpr enumeration_type operator*() const ZIGLIKE_NOEXCEPT
         {
@@ -284,7 +273,7 @@ class enumerator
 };
 
 /// Returns the iterator with a good default for IteratorType
-template <typename T, bool is_const = false> struct enumerator_for
+template <typename T, bool is_const = true> struct enumerator_for
 {
     using underlying = std::remove_const_t<std::remove_reference_t<T>>;
     using type = enumerator<underlying,
@@ -292,8 +281,17 @@ template <typename T, bool is_const = false> struct enumerator_for
                             std::is_rvalue_reference_v<T>, is_const>;
 };
 
-template <typename T, bool is_const = false>
+template <typename T, bool is_const = true>
 using enumerator_for_t = typename enumerator_for<T, is_const>::type;
+
+/// Enumerate variants which use const iteration -------------------------------
+template <typename T>
+inline constexpr auto enumerate(const T &iterable)
+    -> enumerator_for_t<decltype(iterable)>
+{
+    return enumerator_for_t<decltype(iterable)>(
+        std::forward<decltype(iterable)>(iterable));
+}
 
 template <typename T>
 inline constexpr auto enumerate(T &&iterable)
@@ -303,29 +301,20 @@ inline constexpr auto enumerate(T &&iterable)
         std::forward<decltype(iterable)>(iterable));
 }
 
+/// Enumerate variants which use nonconst iteration ----------------------------
 template <typename T>
-inline constexpr auto enumerate(T &iterable)
-    -> enumerator_for_t<decltype(iterable)>
+inline constexpr auto enumerate_mut(T &&iterable)
+    -> enumerator_for_t<decltype(iterable), false>
 {
-    return enumerator_for_t<decltype(iterable)>(
+    return enumerator_for_t<decltype(iterable), false>(
         std::forward<decltype(iterable)>(iterable));
 }
 
 template <typename T>
-inline constexpr auto enumerate(const T &iterable)
-    -> enumerator_for_t<decltype(iterable), true>
+inline constexpr auto enumerate_mut(T &iterable)
+    -> enumerator_for_t<decltype(iterable), false>
 {
-    return enumerator_for_t<decltype(iterable), true>(
+    return enumerator_for_t<decltype(iterable), false>(
         std::forward<decltype(iterable)>(iterable));
 }
-
-/// enumerate variant for being explicitly const
-template <typename T>
-inline constexpr auto enumerate_const(const T &iterable)
-    -> enumerator_for_t<decltype(iterable), true>
-{
-    return enumerator_for_t<decltype(iterable), true>(
-        std::forward<decltype(iterable)>(iterable));
-}
-
 } // namespace zl

@@ -69,7 +69,8 @@ TEST_SUITE("enumerate")
             }
 
             size_t i = 0;
-            for (auto [item, index] : enumerate(zl::slice<uint8_t>(mem))) {
+            zl::slice<uint8_t> test(mem);
+            for (auto [item, index] : enumerate(test)) {
                 REQUIRE(item == 0);
                 REQUIRE(index == i);
                 ++i;
@@ -111,6 +112,24 @@ TEST_SUITE("enumerate")
                 REQUIRE(item == 0);
                 REQUIRE(index == i);
                 ++i;
+            }
+        }
+
+        SUBCASE("use enumerate_mut to avoid iterating by value")
+        {
+            std::array<uint8_t, 256> mem = {0};
+
+            size_t i = 0;
+            for (auto [item, index] : enumerate_mut(mem)) {
+                static_assert(std::is_same_v<decltype(item), uint8_t &>);
+                REQUIRE(item == 0);
+                REQUIRE(index == i);
+                item = index;
+                ++i;
+            }
+
+            for (auto [item, index] : enumerate(mem)) {
+                REQUIRE(item == index);
             }
         }
     }

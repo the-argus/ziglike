@@ -111,13 +111,25 @@ template <typename T> class slice
     using correct_iterator =
         std::conditional_t<std::is_const_v<T>, const_iterator, iterator>;
 
-    inline constexpr correct_iterator begin() const ZIGLIKE_NOEXCEPT
+    inline constexpr correct_iterator begin() ZIGLIKE_NOEXCEPT
     {
         return correct_iterator(m_data);
     }
-    inline constexpr correct_iterator end() const ZIGLIKE_NOEXCEPT
+    inline constexpr correct_iterator end() ZIGLIKE_NOEXCEPT
     {
         return correct_iterator(m_data + m_elements);
+    }
+
+    // const variants of begin and end which are always const if the slice
+    // itself is const
+    inline constexpr const_iterator begin() const ZIGLIKE_NOEXCEPT
+    {
+        return const_iterator(m_data);
+    }
+
+    inline constexpr const_iterator end() const ZIGLIKE_NOEXCEPT
+    {
+        return const_iterator(m_data + m_elements);
     }
 #endif
 
