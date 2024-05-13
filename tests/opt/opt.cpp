@@ -1,6 +1,7 @@
 #include "test_header.h"
 // test header must be first
 #include "testing_types.h"
+#include "ziglike/enumerate.h"
 #include "ziglike/opt.h"
 #include "ziglike/slice.h"
 
@@ -211,19 +212,15 @@ TEST_SUITE("opt")
         SUBCASE("emplace slice types")
         {
             std::array<uint8_t, 128> bytes{0};
-            uint8_t index = 0;
-            for (auto &byte : bytes) {
+            for (auto [byte, index] : enumerate_mut(bytes)) {
                 byte = index;
-                ++index;
             }
 
             opt<slice<uint8_t>> maybe_bytes;
             maybe_bytes.emplace(bytes);
 
-            index = 0;
-            for (auto byte : maybe_bytes.value()) {
+            for (auto [byte, index] : enumerate(maybe_bytes.value())) {
                 REQUIRE(byte == bytes[index]);
-                ++index;
             }
         }
 #endif

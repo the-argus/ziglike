@@ -1,6 +1,7 @@
 #include "test_header.h"
 // test header must be first
 #include "ziglike/detail/is_container.h"
+#include "ziglike/enumerate.h"
 #include "ziglike/slice.h"
 #include <array>
 #include <vector>
@@ -56,7 +57,7 @@ TEST_SUITE("slice")
         {
             int oneint[1] = {0};
 
-            zl::slice<int> ints = zl::slice<int>::from_one((int&)oneint[0]);
+            zl::slice<int> ints = zl::slice<int>::from_one((int &)oneint[0]);
             REQUIRE(ints.size() == 1);
             for (int i : ints)
                 REQUIRE(i == oneint[0]);
@@ -76,7 +77,7 @@ TEST_SUITE("slice")
             static_assert(std::is_same_v<int *, decltype(ints.data())>);
 
             zl::slice<const int> ints_const =
-                zl::slice<int>::from_one((int&)oneint[0]);
+                zl::slice<int>::from_one((int &)oneint[0]);
             static_assert(
                 std::is_same_v<const int *, decltype(ints_const.data())>);
 
@@ -163,12 +164,9 @@ TEST_SUITE("slice")
             uint8_t mem[128];
             auto slice = raw_slice(mem[0], sizeof(mem));
 
-            size_t index = 0;
-            for (auto &byte : slice) {
+            for (auto [byte, index] : enumerate_mut(slice)) {
                 byte = index;
-                ++index;
             }
-            REQUIRE(index == sizeof(mem));
 
             for (size_t i = 0; i < sizeof(mem); ++i) {
                 REQUIRE(mem[i] == i);
