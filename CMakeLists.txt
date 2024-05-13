@@ -6,6 +6,7 @@ set(headers
     ziglike.h
     ziglike/anystatus.h
     ziglike/defer.h
+    ziglike/enumerate.h
     ziglike/factory.h
     ziglike/opt.h
     ziglike/res.h
