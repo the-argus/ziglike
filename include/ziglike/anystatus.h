@@ -28,7 +28,7 @@ struct anystatus
     /// Can be constructed from a result, discarding the contents of the result
     /// and basically just storing the byte error code.
     template <typename T, typename Code>
-    inline constexpr anystatus(const res<T, Code> &result) ZIGLIKE_NOEXCEPT
+    inline constexpr anystatus(const res<T, Code>& result) ZIGLIKE_NOEXCEPT
     {
         m_status = uint8_t(result.err());
     }

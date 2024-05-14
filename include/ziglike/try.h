@@ -4,7 +4,7 @@
 
 namespace zl::detail {
 
-template <class T> constexpr std::is_lvalue_reference<T &&> is_lvalue(T &&)
+template <class T> constexpr std::is_lvalue_reference<T&&> is_lvalue(T&&)
 {
     return {};
 }

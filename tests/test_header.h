@@ -14,7 +14,7 @@
         bool status = false;                             \
         try {                                            \
             operation;                                   \
-        } catch (const ::reserve::_abort_exception &e) { \
+        } catch (const ::reserve::_abort_exception& e) { \
             status = true;                               \
         }                                                \
         REQUIRE(status);                                 \

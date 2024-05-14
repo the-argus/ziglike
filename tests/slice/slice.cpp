@@ -57,7 +57,7 @@ TEST_SUITE("slice")
         {
             int oneint[1] = {0};
 
-            zl::slice<int> ints = zl::slice<int>::from_one((int &)oneint[0]);
+            zl::slice<int> ints = zl::slice<int>::from_one((int&)oneint[0]);
             REQUIRE(ints.size() == 1);
             for (int i : ints)
                 REQUIRE(i == oneint[0]);
@@ -74,23 +74,23 @@ TEST_SUITE("slice")
         {
             int oneint[1] = {0};
             zl::slice<int> ints = zl::slice<int>::from_one(oneint[0]);
-            static_assert(std::is_same_v<int *, decltype(ints.data())>);
+            static_assert(std::is_same_v<int*, decltype(ints.data())>);
 
             zl::slice<const int> ints_const =
-                zl::slice<int>::from_one((int &)oneint[0]);
+                zl::slice<int>::from_one((int&)oneint[0]);
             static_assert(
-                std::is_same_v<const int *, decltype(ints_const.data())>);
+                std::is_same_v<const int*, decltype(ints_const.data())>);
 
-            auto get_nonconst_by_const_ref = [](const zl::slice<int> &guy) {
-                static_assert(std::is_same_v<decltype(guy.data()), int *>);
+            auto get_nonconst_by_const_ref = [](const zl::slice<int>& guy) {
+                static_assert(std::is_same_v<decltype(guy.data()), int*>);
                 return guy;
             };
 
             auto copy = get_nonconst_by_const_ref(ints);
-            static_assert(std::is_same_v<decltype(copy.data()), int *>);
+            static_assert(std::is_same_v<decltype(copy.data()), int*>);
 
             zl::slice<const int> cint_1 =
-                zl::slice<const int>::from_one((const int &)oneint[0]);
+                zl::slice<const int>::from_one((const int&)oneint[0]);
             zl::slice<const int> cint_2(cint_1);
         }
 
@@ -115,7 +115,7 @@ TEST_SUITE("slice")
 
             std::fill(slice.begin(), slice.end(), 0);
             uint8_t index = 0;
-            for (auto &byte : slice) {
+            for (auto& byte : slice) {
                 REQUIRE(byte == 0);
                 byte = index;
                 ++index;
@@ -136,7 +136,7 @@ TEST_SUITE("slice")
             const slice<uint8_t> slice(mem);
 
             uint8_t index = 0;
-            for (const auto &byte : slice) {
+            for (const auto& byte : slice) {
                 REQUIRE(byte == 0);
                 mem[index] = index;
                 ++index;
@@ -144,7 +144,7 @@ TEST_SUITE("slice")
 
             // make sure that also changed slice
             index = 0;
-            for (const auto &byte : slice) {
+            for (const auto& byte : slice) {
                 REQUIRE(byte == index);
                 ++index;
             }

@@ -38,7 +38,7 @@ TEST_SUITE("stdmem")
         SUBCASE("memcompare for string")
         {
             std::array<char, 512> chars;
-            const char *string = "testing string!";
+            const char* string = "testing string!";
             size_t length = strlen(string);
             REQUIRE(std::snprintf(chars.data(), chars.size(), "%s", string) ==
                     length);
@@ -112,7 +112,7 @@ TEST_SUITE("stdmem")
             REQUIRE(!memcontains_one(tmem, tests.data() + 201));
             REQUIRE(memcontains_one(tmem, tests.data() + 199));
             zl::slice<uint8_t> tmem_bytes =
-                raw_slice(*reinterpret_cast<uint8_t *>(tmem.data()),
+                raw_slice(*reinterpret_cast<uint8_t*>(tmem.data()),
                           sizeof(Test) * tmem.size());
             REQUIRE(memcontains_one(tmem_bytes, tests.data() + 100));
             REQUIRE(!memcontains_one(tmem_bytes, tests.data() + 200));

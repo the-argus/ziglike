@@ -86,7 +86,7 @@ template <typename T, typename StatusCode> class res
     /// Return a copy of the internal contents of the result. If this result is
     /// an error, this aborts the program. Check okay() before calling this
     /// function.
-    [[nodiscard]] inline typename std::conditional<is_reference, T, T &&>::type
+    [[nodiscard]] inline typename std::conditional<is_reference, T, T&&>::type
     release() ZIGLIKE_NOEXCEPT
     {
         if (!okay()) [[unlikely]] {
@@ -106,7 +106,7 @@ template <typename T, typename StatusCode> class res
     /// function. Do not try to call release() or release_ref() again, after
     /// calling release() or release_ref() once, the result is invalidated.
     template <typename MaybeT = T>
-        [[nodiscard]] inline typename std::enable_if_t<!is_reference, MaybeT> &
+        [[nodiscard]] inline typename std::enable_if_t<!is_reference, MaybeT>&
         release_ref() &
         ZIGLIKE_NOEXCEPT
     {
@@ -121,7 +121,7 @@ template <typename T, typename StatusCode> class res
     inline constexpr res(
         std::enable_if_t<!is_reference && std::is_constructible_v<T, Args...>,
                          std::in_place_t>,
-        Args &&...args) noexcept
+        Args&&... args) noexcept
     {
         static_assert(std::is_nothrow_constructible_v<T, Args...>,
                       "Attempt to construct in place but constructor invoked "
@@ -143,7 +143,7 @@ template <typename T, typename StatusCode> class res
     template <typename MaybeT = T>
     inline constexpr res(
         typename std::enable_if_t<
-            !is_reference && std::is_move_constructible_v<T>, MaybeT> &&success)
+            !is_reference && std::is_move_constructible_v<T>, MaybeT>&& success)
         ZIGLIKE_NOEXCEPT
     {
         static_assert(std::is_nothrow_move_constructible_v<T>,
@@ -169,7 +169,7 @@ template <typename T, typename StatusCode> class res
         const typename std::enable_if_t<(is_reference ||
                                          std::is_trivially_copy_constructible_v<
                                              T>)&&std::is_same_v<ThisType, res>,
-                                        ThisType> &other) ZIGLIKE_NOEXCEPT
+                                        ThisType>& other) ZIGLIKE_NOEXCEPT
     {
         if (other.okay()) {
             if constexpr (is_reference) {
@@ -182,8 +182,8 @@ template <typename T, typename StatusCode> class res
     }
 
     // Result cannot be assigned to, only constructed and then released.
-    res &operator=(const res &other) = delete;
-    res &operator=(res &&other) = delete;
+    res& operator=(const res& other) = delete;
+    res& operator=(res&& other) = delete;
 
     /// Move construction of result, requires that T is a reference or that it's
     /// move constructible.
@@ -192,7 +192,7 @@ template <typename T, typename StatusCode> class res
         typename std::enable_if_t<
             (is_reference ||
              std::is_move_constructible_v<T>)&&std::is_same_v<ThisType, res>,
-            ThisType> &&other) ZIGLIKE_NOEXCEPT
+            ThisType>&& other) ZIGLIKE_NOEXCEPT
     {
         if (other.okay()) {
             if constexpr (is_reference) {
@@ -236,7 +236,7 @@ struct fmt::formatter<zl::res<T, StatusCode>>
     static_assert(
         fmt::is_formattable<T>::value,
         "Attempt to format a zl::res whose contents are not formattable.");
-    constexpr format_parse_context::iterator parse(format_parse_context &ctx)
+    constexpr format_parse_context::iterator parse(format_parse_context& ctx)
     {
         auto it = ctx.begin();
         // first character should just be closing brackets since we dont allow
@@ -246,8 +246,8 @@ struct fmt::formatter<zl::res<T, StatusCode>>
         return it;
     }
 
-    format_context::iterator format(const zl::res<T, StatusCode> &result,
-                                    format_context &ctx) const
+    format_context::iterator format(const zl::res<T, StatusCode>& result,
+                                    format_context& ctx) const
     {
         if (result.okay()) {
             if constexpr (zl::res<T, StatusCode>::is_reference) {

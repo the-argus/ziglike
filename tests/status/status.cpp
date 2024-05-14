@@ -59,7 +59,7 @@ TEST_SUITE("status")
         SUBCASE("turning different statuses into anystatus")
         {
             auto memalloc = []() -> status<OtherError> {
-                void *bytes = malloc(100);
+                void* bytes = malloc(100);
                 if (!bytes)
                     return OtherError::OOM;
                 free(bytes);

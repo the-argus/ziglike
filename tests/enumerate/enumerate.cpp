@@ -90,11 +90,11 @@ TEST_SUITE("enumerate")
                 mem.push_back({});
             }
 
-            const std::vector<Test> &memref = mem;
+            const std::vector<Test>& memref = mem;
 
             size_t i = 0;
             for (auto [item, index] : enumerate(memref)) {
-                static_assert(std::is_same_v<decltype(item), const Test &>);
+                static_assert(std::is_same_v<decltype(item), const Test&>);
                 REQUIRE(item.i == 0);
                 REQUIRE(item.j == 0);
                 REQUIRE(index == i);
@@ -121,7 +121,7 @@ TEST_SUITE("enumerate")
 
             size_t i = 0;
             for (auto [item, index] : enumerate_mut(mem)) {
-                static_assert(std::is_same_v<decltype(item), uint8_t &>);
+                static_assert(std::is_same_v<decltype(item), uint8_t&>);
                 REQUIRE(item == 0);
                 REQUIRE(index == i);
                 item = index;

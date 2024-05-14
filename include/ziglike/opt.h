@@ -63,7 +63,7 @@ template <typename T> class opt
 
     struct members_ref
     {
-        std::remove_reference_t<T> *pointer = nullptr;
+        std::remove_reference_t<T>* pointer = nullptr;
     };
 
 #ifndef ZIGLIKE_NO_SMALL_OPTIONAL_SLICE
@@ -72,7 +72,7 @@ template <typename T> class opt
         size_t elements;
         // propagate const-ness of slice
         std::conditional_t<std::is_const_v<typename T::type>,
-                           const typename T::type *, typename T::type *>
+                           const typename T::type*, typename T::type*>
             data;
     };
 
@@ -105,7 +105,7 @@ template <typename T> class opt
 
     /// Extract the inner value of the optional, or abort the program. Check
     /// has_value() before calling this.
-    [[nodiscard]] inline T &value() & ZIGLIKE_NOEXCEPT
+    [[nodiscard]] inline T& value() & ZIGLIKE_NOEXCEPT
     {
         if (!has_value()) [[unlikely]] {
             ZIGLIKE_ABORT();
@@ -115,7 +115,7 @@ template <typename T> class opt
         } else
 #ifndef ZIGLIKE_NO_SMALL_OPTIONAL_SLICE
             if constexpr (is_slice) {
-            return *reinterpret_cast<T *>(&m);
+            return *reinterpret_cast<T*>(&m);
         } else
 #endif
         {
@@ -123,7 +123,7 @@ template <typename T> class opt
         }
     }
 
-    [[nodiscard]] inline T &&value() && ZIGLIKE_NOEXCEPT
+    [[nodiscard]] inline T&& value() && ZIGLIKE_NOEXCEPT
     {
         if (!has_value()) [[unlikely]] {
             ZIGLIKE_ABORT();
@@ -133,7 +133,7 @@ template <typename T> class opt
         } else
 #ifndef ZIGLIKE_NO_SMALL_OPTIONAL_SLICE
             if constexpr (is_slice) {
-            return std::move(*reinterpret_cast<T *>(&m));
+            return std::move(*reinterpret_cast<T*>(&m));
         } else
 #endif
         {
@@ -141,7 +141,7 @@ template <typename T> class opt
         }
     }
 
-    inline const T &value() const &ZIGLIKE_NOEXCEPT
+    inline const T& value() const& ZIGLIKE_NOEXCEPT
     {
         if (!has_value()) [[unlikely]] {
             ZIGLIKE_ABORT();
@@ -151,7 +151,7 @@ template <typename T> class opt
         } else
 #ifndef ZIGLIKE_NO_SMALL_OPTIONAL_SLICE
             if constexpr (is_slice) {
-            return *reinterpret_cast<const T *>(&m);
+            return *reinterpret_cast<const T*>(&m);
         } else
 #endif
         {
@@ -183,7 +183,7 @@ template <typename T> class opt
 
     /// Types can be constructed directly in to the optional
     template <typename... Args>
-    inline void emplace(Args &&...args) ZIGLIKE_NOEXCEPT
+    inline void emplace(Args&&... args) ZIGLIKE_NOEXCEPT
     {
         static_assert(
             !is_reference,
@@ -195,7 +195,7 @@ template <typename T> class opt
         }
 #ifndef ZIGLIKE_NO_SMALL_OPTIONAL_SLICE
         if constexpr (is_slice) {
-            T *slicelocation = reinterpret_cast<T *>(&m);
+            T* slicelocation = reinterpret_cast<T*>(&m);
             new (slicelocation) T(args...);
         } else {
 #endif
@@ -227,16 +227,15 @@ template <typename T> class opt
 
     /// Able to assign a moved type if the type is moveable
     template <typename MaybeT = T>
-    inline constexpr opt &
-    operator=(typename std::enable_if_t<
-              !is_reference &&
+    inline constexpr opt& operator=(
+        typename std::enable_if_t<!is_reference &&
 #ifndef ZIGLIKE_NO_SMALL_OPTIONAL_SLICE
-                  !is_slice &&
+                                      !is_slice &&
 #endif
-                  std::is_constructible_v<MaybeT, MaybeT &&>,
-              MaybeT> &&something) ZIGLIKE_NOEXCEPT
+                                      std::is_constructible_v<MaybeT, MaybeT&&>,
+                                  MaybeT>&& something) ZIGLIKE_NOEXCEPT
     {
-        static_assert(std::is_nothrow_constructible_v<MaybeT, MaybeT &&>,
+        static_assert(std::is_nothrow_constructible_v<MaybeT, MaybeT&&>,
                       "Attempt to move type into an opt, but the move "
                       "constructor of the type can throw an exception.");
         if (m.has_value) {
@@ -248,15 +247,15 @@ template <typename T> class opt
     }
 
     template <typename MaybeT = T>
-    inline constexpr opt(typename std::enable_if_t<
-                         !is_reference &&
+    inline constexpr opt(
+        typename std::enable_if_t<!is_reference &&
 #ifndef ZIGLIKE_NO_SMALL_OPTIONAL_SLICE
-                             !is_slice &&
+                                      !is_slice &&
 #endif
-                             std::is_constructible_v<MaybeT, MaybeT &&>,
-                         MaybeT> &&something) ZIGLIKE_NOEXCEPT
+                                      std::is_constructible_v<MaybeT, MaybeT&&>,
+                                  MaybeT>&& something) ZIGLIKE_NOEXCEPT
     {
-        static_assert(std::is_nothrow_constructible_v<MaybeT, MaybeT &&>,
+        static_assert(std::is_nothrow_constructible_v<MaybeT, MaybeT&&>,
                       "Attempt to move type into an opt, but the move "
                       "constructor of the type can throw an exception.");
         new (&m.value.some) MaybeT(std::move(something));
@@ -265,14 +264,14 @@ template <typename T> class opt
 
     /// Copyable types can also be assigned into their optionals
     template <typename MaybeT = T>
-    inline constexpr opt &
+    inline constexpr opt&
     operator=(const typename std::enable_if_t<
 #ifndef ZIGLIKE_NO_SMALL_OPTIONAL_SLICE
               is_slice ||
 #endif
                   (!is_reference &&
-                   std::is_constructible_v<MaybeT, const MaybeT &>),
-              MaybeT> &something) ZIGLIKE_NOEXCEPT
+                   std::is_constructible_v<MaybeT, const MaybeT&>),
+              MaybeT>& something) ZIGLIKE_NOEXCEPT
     {
 #ifndef ZIGLIKE_NO_SMALL_OPTIONAL_SLICE
         if constexpr (is_slice) {
@@ -299,8 +298,8 @@ template <typename T> class opt
                          is_slice ||
 #endif
                              (!is_reference &&
-                              std::is_constructible_v<MaybeT, const MaybeT &>),
-                         MaybeT> &something) ZIGLIKE_NOEXCEPT
+                              std::is_constructible_v<MaybeT, const MaybeT&>),
+                         MaybeT>& something) ZIGLIKE_NOEXCEPT
     {
 #ifndef ZIGLIKE_NO_SMALL_OPTIONAL_SLICE
         if constexpr (is_slice) {
@@ -324,7 +323,7 @@ template <typename T> class opt
                              !is_reference &&
                              std::is_constructible_v<T, Args...>),
                          std::in_place_t>,
-        Args &&...args) ZIGLIKE_NOEXCEPT
+        Args&&... args) ZIGLIKE_NOEXCEPT
     {
         static_assert(std::is_nothrow_constructible_v<T, Args...>,
                       "Attempt to construct item in-place in optional but the "
@@ -344,7 +343,7 @@ template <typename T> class opt
 
     /// Reference types can be assigned to an optional to overwrite it.
     template <typename MaybeT = T>
-    inline constexpr opt &
+    inline constexpr opt&
     operator=(typename std::enable_if_t<is_reference, MaybeT> something)
         ZIGLIKE_NOEXCEPT
     {
@@ -366,8 +365,8 @@ template <typename T> class opt
                    is_slice ||
 #endif
                        (!is_reference && std::is_same_v<ThisType, opt>),
-                   ThisType> &self,
-               const ThisType &other) ZIGLIKE_NOEXCEPT
+                   ThisType>& self,
+               const ThisType& other) ZIGLIKE_NOEXCEPT
     {
         if (!self.has_value()) {
             return !other.has_value();
@@ -376,8 +375,8 @@ template <typename T> class opt
             if constexpr (is_slice) {
                 return !other.has_value()
                            ? false
-                           : *reinterpret_cast<const T *>(&self.m) ==
-                                 *reinterpret_cast<const T *>(&other.m);
+                           : *reinterpret_cast<const T*>(&self.m) ==
+                                 *reinterpret_cast<const T*>(&other.m);
             } else {
 #endif
                 return !other.has_value()
@@ -397,11 +396,11 @@ template <typename T> class opt
                is_slice ||
 #endif
                    (!is_reference && std::is_same_v<MaybeT, T>),
-               MaybeT> &other) const ZIGLIKE_NOEXCEPT
+               MaybeT>& other) const ZIGLIKE_NOEXCEPT
     {
 #ifndef ZIGLIKE_NO_SMALL_OPTIONAL_SLICE
         if constexpr (is_slice) {
-            return !has_value() ? false : *reinterpret_cast<T *>(&m) == other;
+            return !has_value() ? false : *reinterpret_cast<T*>(&m) == other;
         } else {
 #endif
             return !has_value() ? false : m.value.some == other;
@@ -418,18 +417,17 @@ template <typename T> class opt
                    is_slice ||
 #endif
                        (!is_reference && std::is_same_v<ThisType, opt>),
-                   ThisType> &self,
-               const ThisType &other) ZIGLIKE_NOEXCEPT
+                   ThisType>& self,
+               const ThisType& other) ZIGLIKE_NOEXCEPT
     {
         if (!self.has_value()) {
             return other.has_value();
         } else {
 #ifndef ZIGLIKE_NO_SMALL_OPTIONAL_SLICE
             if constexpr (is_slice) {
-                return !other.has_value()
-                           ? true
-                           : *reinterpret_cast<T *>(&self.m) !=
-                                 *reinterpret_cast<T *>(&other.m);
+                return !other.has_value() ? true
+                                          : *reinterpret_cast<T*>(&self.m) !=
+                                                *reinterpret_cast<T*>(&other.m);
             } else {
 #endif
                 return !other.has_value()
@@ -449,11 +447,11 @@ template <typename T> class opt
                is_slice ||
 #endif
                    (!is_reference && std::is_same_v<MaybeT, T>),
-               MaybeT> &other) const ZIGLIKE_NOEXCEPT
+               MaybeT>& other) const ZIGLIKE_NOEXCEPT
     {
 #ifndef ZIGLIKE_NO_SMALL_OPTIONAL_SLICE
         if constexpr (is_slice) {
-            return !has_value() ? true : *reinterpret_cast<T *>(&m) != other;
+            return !has_value() ? true : *reinterpret_cast<T*>(&m) != other;
         } else {
 #endif
             return !has_value() ? true : m.value.some != other;
@@ -468,7 +466,7 @@ template <typename T> class opt
     template <typename OtherType = T>
     inline constexpr bool strict_compare(
         const std::enable_if_t<is_reference && std::is_same_v<OtherType, T>,
-                               OtherType> &other) const ZIGLIKE_NOEXCEPT
+                               OtherType>& other) const ZIGLIKE_NOEXCEPT
     {
         if (!has_value())
             return false;
@@ -482,7 +480,7 @@ template <typename T> class opt
     template <typename OtherType = T>
     inline constexpr bool loose_compare(
         const std::enable_if_t<is_reference && (std::is_same_v<OtherType, T>),
-                               OtherType> &other) const ZIGLIKE_NOEXCEPT
+                               OtherType>& other) const ZIGLIKE_NOEXCEPT
     {
         if (!has_value())
             return false;
@@ -502,7 +500,7 @@ template <typename T> struct fmt::formatter<zl::opt<T>>
         fmt::is_formattable<T>::value,
         "Attempt to format an optional whose content is not formattable.");
 
-    constexpr format_parse_context::iterator parse(format_parse_context &ctx)
+    constexpr format_parse_context::iterator parse(format_parse_context& ctx)
     {
         auto it = ctx.begin();
 
@@ -515,8 +513,8 @@ template <typename T> struct fmt::formatter<zl::opt<T>>
         return it;
     }
 
-    format_context::iterator format(const zl::opt<T> &optional,
-                                    format_context &ctx) const
+    format_context::iterator format(const zl::opt<T>& optional,
+                                    format_context& ctx) const
     {
         if (optional.has_value()) {
             if constexpr (zl::opt<T>::is_reference) {
@@ -524,8 +522,8 @@ template <typename T> struct fmt::formatter<zl::opt<T>>
             } else
 #ifndef ZIGLIKE_NO_SMALL_OPTIONAL_SLICE
                 if constexpr (zl::opt<T>::is_slice) {
-                return fmt::format_to(
-                    ctx.out(), "{}", *reinterpret_cast<const T *>(&optional.m));
+                return fmt::format_to(ctx.out(), "{}",
+                                      *reinterpret_cast<const T*>(&optional.m));
             } else
 #endif
             {

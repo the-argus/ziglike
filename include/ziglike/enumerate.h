@@ -9,18 +9,18 @@ class enumerator;
 template <typename T> struct reference_enumeration
 {
   private:
-    T &m_item;
+    T& m_item;
     const size_t m_index;
 
   public:
-    inline constexpr reference_enumeration(T &item,
+    inline constexpr reference_enumeration(T& item,
                                            size_t index) ZIGLIKE_NOEXCEPT
         : m_item(item),
           m_index(index)
     {
     }
 
-    template <size_t I> auto &get() const &
+    template <size_t I> auto& get() const&
     {
         if constexpr (I == 0)
             return m_item;
@@ -34,18 +34,18 @@ template <typename T> struct reference_enumeration
 template <typename T> struct const_reference_enumeration
 {
   private:
-    const T &m_item;
+    const T& m_item;
     const size_t m_index;
 
   public:
-    inline constexpr const_reference_enumeration(const T &item,
+    inline constexpr const_reference_enumeration(const T& item,
                                                  size_t index) ZIGLIKE_NOEXCEPT
         : m_item(item),
           m_index(index)
     {
     }
 
-    template <size_t I> auto const &get() const &
+    template <size_t I> auto const& get() const&
     {
         if constexpr (I == 0)
             return m_item;
@@ -59,21 +59,21 @@ template <typename T> struct const_reference_enumeration
 template <typename T> struct value_enumeration
 {
     static_assert(!std::is_reference_v<T>);
-    static_assert(sizeof(T) <= sizeof(T &));
+    static_assert(sizeof(T) <= sizeof(T&));
 
   private:
     const T m_item;
     const size_t m_index;
 
   public:
-    inline constexpr value_enumeration(const T &item,
+    inline constexpr value_enumeration(const T& item,
                                        size_t index) ZIGLIKE_NOEXCEPT
         : m_item(item),
           m_index(index)
     {
     }
 
-    template <size_t I> auto get() const &
+    template <size_t I> auto get() const&
     {
         if constexpr (I == 0)
             return m_item;
@@ -107,7 +107,7 @@ struct std::tuple_size<zl::value_enumeration<T>>
 // NOLINTNEXTLINE
 template <class T> struct std::tuple_element<0, zl::reference_enumeration<T>>
 {
-    using type = T &;
+    using type = T&;
 };
 // NOLINTNEXTLINE
 template <class T> struct std::tuple_element<1, zl::reference_enumeration<T>>
@@ -118,7 +118,7 @@ template <class T>
 // NOLINTNEXTLINE
 struct std::tuple_element<0, zl::const_reference_enumeration<T>>
 {
-    using type = const T &;
+    using type = const T&;
 };
 template <class T>
 // NOLINTNEXTLINE
@@ -146,7 +146,7 @@ class enumerator
   private:
     static_assert(!std::is_reference_v<Iterable>);
     using reference_type =
-        std::conditional_t<is_const, const Iterable &, Iterable &>;
+        std::conditional_t<is_const, const Iterable&, Iterable&>;
     using internal_type = std::conditional_t<owns, Iterable, reference_type>;
 
     internal_type m_iterable;
@@ -155,19 +155,19 @@ class enumerator
     struct iterator;
 
     template <typename U = Iterable>
-    inline constexpr enumerator(std::enable_if_t<owns, U &&> iterable)
+    inline constexpr enumerator(std::enable_if_t<owns, U&&> iterable)
         : m_iterable(std::forward<decltype(iterable)>(iterable))
     {
     }
 
     template <typename U = Iterable>
-    inline constexpr enumerator(std::enable_if_t<is_const, const U &> iterable)
+    inline constexpr enumerator(std::enable_if_t<is_const, const U&> iterable)
         : m_iterable(std::forward<decltype(iterable)>(iterable))
     {
     }
 
     template <typename U = Iterable>
-    inline constexpr enumerator(std::enable_if_t<!owns, U &> iterable)
+    inline constexpr enumerator(std::enable_if_t<!owns, U&> iterable)
         : m_iterable(std::forward<decltype(iterable)>(iterable))
     {
     }
@@ -189,7 +189,7 @@ class enumerator
         using difference_type = std::ptrdiff_t;
         using value_type = std::remove_pointer_t<T>;
         using pointer = T;
-        using reference = value_type &;
+        using reference = value_type&;
     };
 
   public:
@@ -211,7 +211,7 @@ class enumerator
         using pointer = typename parent_iterator::pointer;
         using reference = typename parent_iterator::reference;
 
-        inline constexpr iterator(const parent_iterator_raw &iter,
+        inline constexpr iterator(const parent_iterator_raw& iter,
                                   size_t index) ZIGLIKE_NOEXCEPT
             : m_iter(iter),
               m_index(index)
@@ -219,7 +219,7 @@ class enumerator
         }
 
         using const_enumeration_type =
-            std::conditional_t<sizeof(value_type) <= sizeof(value_type *),
+            std::conditional_t<sizeof(value_type) <= sizeof(value_type*),
                                value_enumeration<value_type>,
                                const_reference_enumeration<value_type>>;
 
@@ -239,7 +239,7 @@ class enumerator
         // m_iter.operator->(); }
 
         // Prefix increment
-        inline constexpr iterator &operator++() ZIGLIKE_NOEXCEPT
+        inline constexpr iterator& operator++() ZIGLIKE_NOEXCEPT
         {
             ++m_iter;
             ++m_index;
@@ -256,12 +256,12 @@ class enumerator
         }
 
         inline constexpr friend bool
-        operator==(const iterator &a, const iterator &b) ZIGLIKE_NOEXCEPT
+        operator==(const iterator& a, const iterator& b) ZIGLIKE_NOEXCEPT
         {
             return a.m_iter == b.m_iter;
         };
         inline constexpr friend bool
-        operator!=(const iterator &a, const iterator &b) ZIGLIKE_NOEXCEPT
+        operator!=(const iterator& a, const iterator& b) ZIGLIKE_NOEXCEPT
         {
             return a.m_iter != b.m_iter;
         };
@@ -276,9 +276,9 @@ class enumerator
 template <typename T, bool is_const = true> struct enumerator_for
 {
     using underlying = std::remove_const_t<std::remove_reference_t<T>>;
-    using type = enumerator<underlying,
-                            typename std::remove_reference_t<T>::value_type &,
-                            std::is_rvalue_reference_v<T>, is_const>;
+    using type =
+        enumerator<underlying, typename std::remove_reference_t<T>::value_type&,
+                   std::is_rvalue_reference_v<T>, is_const>;
 };
 
 template <typename T, bool is_const = true>
@@ -286,7 +286,7 @@ using enumerator_for_t = typename enumerator_for<T, is_const>::type;
 
 /// Enumerate variants which use const iteration -------------------------------
 template <typename T>
-inline constexpr auto enumerate(const T &iterable)
+inline constexpr auto enumerate(const T& iterable)
     -> enumerator_for_t<decltype(iterable)>
 {
     return enumerator_for_t<decltype(iterable)>(
@@ -294,7 +294,7 @@ inline constexpr auto enumerate(const T &iterable)
 }
 
 template <typename T>
-inline constexpr auto enumerate(T &&iterable)
+inline constexpr auto enumerate(T&& iterable)
     -> enumerator_for_t<decltype(iterable)>
 {
     return enumerator_for_t<decltype(iterable)>(
@@ -303,7 +303,7 @@ inline constexpr auto enumerate(T &&iterable)
 
 /// Enumerate variants which use nonconst iteration ----------------------------
 template <typename T>
-inline constexpr auto enumerate_mut(T &&iterable)
+inline constexpr auto enumerate_mut(T&& iterable)
     -> enumerator_for_t<decltype(iterable), false>
 {
     return enumerator_for_t<decltype(iterable), false>(
@@ -311,7 +311,7 @@ inline constexpr auto enumerate_mut(T &&iterable)
 }
 
 template <typename T>
-inline constexpr auto enumerate_mut(T &iterable)
+inline constexpr auto enumerate_mut(T& iterable)
     -> enumerator_for_t<decltype(iterable), false>
 {
     return enumerator_for_t<decltype(iterable), false>(

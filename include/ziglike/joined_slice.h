@@ -96,17 +96,17 @@ template <typename T> class joined_slice
     {
     }
 
-    joined_slice &operator=(const joined_slice &) = default;
-    joined_slice(const joined_slice &) = default;
+    joined_slice& operator=(const joined_slice&) = default;
+    joined_slice(const joined_slice&) = default;
 
     inline constexpr friend bool
-    operator==(const joined_slice &a, const joined_slice &b) ZIGLIKE_NOEXCEPT
+    operator==(const joined_slice& a, const joined_slice& b) ZIGLIKE_NOEXCEPT
     {
         return a.m_slices == b.m_slices;
     };
 
     inline constexpr friend bool
-    operator!=(const joined_slice &a, const joined_slice &b) ZIGLIKE_NOEXCEPT
+    operator!=(const joined_slice& a, const joined_slice& b) ZIGLIKE_NOEXCEPT
     {
         return a.m_slices != b.m_slices;
     };
@@ -116,8 +116,8 @@ template <typename T> class joined_slice
         using iterator_category = std::forward_iterator_tag;
         using difference_type = std::ptrdiff_t;
         using value_type = T;
-        using pointer = value_type *;
-        using reference = value_type &;
+        using pointer = value_type*;
+        using reference = value_type&;
 
         inline constexpr pointer ptr() const ZIGLIKE_NOEXCEPT
         {
@@ -154,7 +154,7 @@ template <typename T> class joined_slice
         }
 
         // Prefix increment
-        inline constexpr iterator &operator++() ZIGLIKE_NOEXCEPT
+        inline constexpr iterator& operator++() ZIGLIKE_NOEXCEPT
         {
             assert(m_slices.size() != 0);
             if (m_slices.size() == 0) [[unlikely]]
@@ -177,7 +177,7 @@ template <typename T> class joined_slice
         }
 
         inline constexpr friend bool
-        operator==(const iterator &a, const iterator &b) ZIGLIKE_NOEXCEPT
+        operator==(const iterator& a, const iterator& b) ZIGLIKE_NOEXCEPT
         {
             return a.m_slices == b.m_slices &&
                    a.m_slice_index == b.m_slice_index &&
@@ -185,7 +185,7 @@ template <typename T> class joined_slice
         };
 
         inline constexpr friend bool
-        operator!=(const iterator &a, const iterator &b) ZIGLIKE_NOEXCEPT
+        operator!=(const iterator& a, const iterator& b) ZIGLIKE_NOEXCEPT
         {
             return a.m_slices != b.m_slices ||
                    a.m_slice_index != b.m_slice_index ||

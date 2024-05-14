@@ -12,7 +12,7 @@ static_assert(sizeof(opt<slice<int>>) == sizeof(slice<int>),
               "Optional slice types are a different size than slices");
 #endif
 
-static_assert(sizeof(opt<int &>) == sizeof(int *),
+static_assert(sizeof(opt<int&>) == sizeof(int*),
               "Optional reference types are a different size than pointers");
 
 TEST_SUITE("opt")
@@ -125,8 +125,8 @@ TEST_SUITE("opt")
         SUBCASE("optional reference types")
         {
             int test = 10;
-            opt<int &> testref;
-            opt<int &> testref2;
+            opt<int&> testref;
+            opt<int&> testref2;
             REQUIRE(!testref.has_value());
             REQUIRE(!testref2.has_value());
             testref = test;
@@ -147,12 +147,12 @@ TEST_SUITE("opt")
             {
                 std::array<int, 300> numbers;
                 inline constexpr BigThing() noexcept : numbers({}) {}
-                inline constexpr BigThing(const BigThing &other) noexcept
+                inline constexpr BigThing(const BigThing& other) noexcept
                     : numbers(other.numbers)
                 {
                     ++copy_count;
                 }
-                BigThing &operator=(const BigThing &other) = delete;
+                BigThing& operator=(const BigThing& other) = delete;
             };
 
             auto try_make_big_thing = [](bool should_succeed) -> opt<BigThing> {
@@ -183,7 +183,7 @@ TEST_SUITE("opt")
             const auto get_maybe_int = []() -> opt<int> { return 1; };
 
             static_assert(
-                std::is_same_v<decltype(get_maybe_int().value()), int &&>);
+                std::is_same_v<decltype(get_maybe_int().value()), int&&>);
 
             int my_int = get_maybe_int().value();
             my_int++;
@@ -199,7 +199,7 @@ TEST_SUITE("opt")
             };
 
             static_assert(std::is_same_v<decltype(get_maybe_slice().value()),
-                                         slice<uint8_t> &&>);
+                                         slice<uint8_t>&&>);
 
             slice<uint8_t> my_slice = get_maybe_slice().value();
             std::fill(my_slice.begin(), my_slice.end(), 0);
@@ -263,7 +263,7 @@ TEST_SUITE("opt")
             fmt::println("optional string AFTER: {}", str);
 
             std::string_view target = "reference yello";
-            opt<std::string_view &> refstr(target);
+            opt<std::string_view&> refstr(target);
             fmt::println("optional reference string BEFORE: {}", refstr);
             refstr.reset();
             fmt::println("optional reference string AFTER: {}", refstr);

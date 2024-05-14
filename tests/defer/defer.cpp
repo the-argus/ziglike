@@ -24,7 +24,7 @@ TEST_SUITE("defer")
                 defer set_to_zero([&counter]() { counter = 0; });
                 for (size_t i = 0; i < 10; ++i) {
                     defer increment([&counter]() { counter++; });
-                    static_assert(sizeof(increment) == sizeof(void *),
+                    static_assert(sizeof(increment) == sizeof(void*),
                                   "Defer object not the same size as pointer");
                     REQUIRE(counter == i);
                 }
@@ -35,36 +35,35 @@ TEST_SUITE("defer")
 
         SUBCASE("conditionally cancel defer")
         {
-            std::unordered_set<void *> malloced_stuff;
-            auto fakemalloc = [&malloced_stuff](size_t bytes) -> void * {
-                void *mem = malloc(bytes);
+            std::unordered_set<void*> malloced_stuff;
+            auto fakemalloc = [&malloced_stuff](size_t bytes) -> void* {
+                void* mem = malloc(bytes);
                 REQUIRE(mem);
                 malloced_stuff.insert(mem);
                 return mem;
             };
 
-            auto fakefree = [&malloced_stuff](void *mem) {
+            auto fakefree = [&malloced_stuff](void* mem) {
                 malloced_stuff.erase(mem);
                 free(mem);
             };
 
             // make sure fakemalloc and fakefree work
             REQUIRE(malloced_stuff.size() == 0);
-            void *mem = fakemalloc(100);
+            void* mem = fakemalloc(100);
             REQUIRE(malloced_stuff.size() == 1);
             fakefree(mem);
             REQUIRE(malloced_stuff.size() == 0);
 
-            auto getmems =
-                [fakemalloc,
-                 fakefree](bool fail_halfway) -> opt<std::array<void *, 3>> {
-                void *first_mem = fakemalloc(100);
+            auto getmems = [fakemalloc, fakefree](
+                               bool fail_halfway) -> opt<std::array<void*, 3>> {
+                void* first_mem = fakemalloc(100);
                 if (!first_mem)
                     return {};
                 defer free_first_mem(
                     [first_mem, fakefree]() { fakefree(first_mem); });
 
-                void *second_mem = fakemalloc(100);
+                void* second_mem = fakemalloc(100);
                 if (!second_mem)
                     return {};
                 defer free_second_mem(
@@ -73,7 +72,7 @@ TEST_SUITE("defer")
                 if (fail_halfway)
                     return {};
 
-                void *third_mem = fakemalloc(100);
+                void* third_mem = fakemalloc(100);
                 if (!third_mem)
                     return {};
 
@@ -81,13 +80,13 @@ TEST_SUITE("defer")
                 free_first_mem.cancel();
                 free_second_mem.cancel();
 
-                return std::array<void *, 3>{first_mem, second_mem, third_mem};
+                return std::array<void*, 3>{first_mem, second_mem, third_mem};
             };
 
             auto maybe_mems = getmems(false);
             if (maybe_mems.has_value()) {
                 REQUIRE(malloced_stuff.size() == 3);
-                for (void *mem : maybe_mems.value()) {
+                for (void* mem : maybe_mems.value()) {
                     fakefree(mem);
                 }
             }

@@ -36,7 +36,7 @@ constexpr bool memcontains(zl::slice<T> outer, zl::slice<T> inner) noexcept;
 /// Check if a given T is contained entirely within a slice of SliceT.
 template <typename SliceT, typename T>
 constexpr bool memcontains_one(zl::slice<SliceT> outer,
-                               const T *inner) noexcept;
+                               const T* inner) noexcept;
 
 /// Check if two slices of memory have any memory in common.
 template <typename T>
@@ -86,10 +86,10 @@ inline constexpr bool zl::memcompare(zl::slice<T> memory_1,
         return true;
     }
     const size_t size = memory_1.size() * sizeof(T);
-    const auto *const as_bytes_1 =
-        reinterpret_cast<const uint8_t *>(memory_1.data());
-    const auto *const as_bytes_2 =
-        reinterpret_cast<const uint8_t *>(memory_2.data());
+    const auto* const as_bytes_1 =
+        reinterpret_cast<const uint8_t*>(memory_1.data());
+    const auto* const as_bytes_2 =
+        reinterpret_cast<const uint8_t*>(memory_2.data());
 
     for (size_t i = 0; i < size; ++i) {
         if (as_bytes_1[i] != as_bytes_2[i]) {
@@ -109,10 +109,10 @@ inline constexpr bool zl::memcontains(zl::slice<T> outer,
 
 template <typename SliceT, typename T>
 inline constexpr bool zl::memcontains_one(zl::slice<SliceT> outer,
-                                          const T *inner) noexcept
+                                          const T* inner) noexcept
 {
-    return (uint8_t *)outer.begin().ptr() <= (uint8_t *)inner &&
-           (uint8_t *)outer.end().ptr() >= (uint8_t *)(inner + 1);
+    return (uint8_t*)outer.begin().ptr() <= (uint8_t*)inner &&
+           (uint8_t*)outer.end().ptr() >= (uint8_t*)(inner + 1);
 }
 
 template <typename T>
@@ -127,8 +127,8 @@ inline constexpr void zl::memfill(zl::slice<T> slice, const T original) noexcept
     static_assert(
         std::is_nothrow_copy_constructible_v<T>,
         "Cannot memfill a type which can throw when copy constructed.");
-    for (T &item : slice) {
-        new ((void *)std::addressof(item)) T(original);
+    for (T& item : slice) {
+        new ((void*)std::addressof(item)) T(original);
     }
 }
 
