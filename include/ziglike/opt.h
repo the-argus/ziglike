@@ -73,7 +73,7 @@ template <typename T> class opt
         // propagate const-ness of slice
         std::conditional_t<std::is_const_v<typename T::type>,
                            const typename T::type*, typename T::type*>
-            data;
+            data = nullptr;
     };
 
     using members_t = std::conditional_t<
