@@ -1,15 +1,25 @@
 .{
-    .name = "allo",
-    .version = "0.0.1",
+    .name = "ziglike",
+    .version = "0.1.0",
+
+    .paths = .{
+        "include/",
+        "tests/",
+        "build.zig",
+        "build.zig.zon",
+        "CMakeLists.txt",
+        "flake.lock",
+        "flake.nix",
+    },
 
     .dependencies = .{
         .fmt = .{
-            .url = "https://github.com/the-argus/fmt/archive/6943e150b4c9fe5b033203dabbc60668e6122a2c.tar.gz",
-            .hash = "122014221f044a21045103dec0254a60c8edd3c3e3cef3fed359ca072ce0cf05252a",
+            .url = "https://github.com/the-argus/fmt/archive/d5ad6ce7ab711d601ffbf0706740279617b43325.tar.gz",
+            .hash = "1220727ae90b421da0d3e09aa9449a55eff672fdab47f62dd661dc1b5634ea78b56a",
         },
         .compile_commands = .{
-            .url = "https://github.com/the-argus/zig-compile-commands/archive/1310c5d03a21f2e55d5272021a4b7c7ee656f613.tar.gz",
-            .hash = "122016568d000bacabc11c876dbee168ca6c736a6d1925ee612a63b150cb22518a18",
+            .url = "https://github.com/the-argus/zig-compile-commands/archive/95c8fa158e350d505b55a87a59cc4836e9606032.tar.gz",
+            .hash = "1220b92b277b33762a10b4f239edddfbe9aadd53af88c678f94443b0d2312d9526fa",
         },
-    }
+    },
 }

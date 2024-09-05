@@ -28,7 +28,7 @@
             (with pkgs; [
               gdb
               # valgrind
-              zig_0_11
+              zig_0_13
             ]);
         };
 

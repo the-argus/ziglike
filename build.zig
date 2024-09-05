@@ -50,7 +50,10 @@ pub fn build(b: *std.Build) !void {
 
     // actual public installation step
     b.installDirectory(.{
-        .source_dir = .{ .path = "include/ziglike/" },
+        .source_dir = .{ .src_path = .{
+            .owner = b,
+            .sub_path = "include/ziglike/",
+        } },
         .install_dir = .header,
         .install_subdir = "ziglike/",
     });
@@ -68,7 +71,10 @@ pub fn build(b: *std.Build) !void {
             .target = target,
         });
         test_exe.addCSourceFile(.{
-            .file = .{ .path = b.pathJoin(&.{ "tests", source_file }) },
+            .file = .{ .src_path = .{
+                .owner = b,
+                .sub_path = b.pathJoin(&.{ "tests", source_file }),
+            } },
             .flags = flags_owned,
         });
         test_exe.linkLibCpp();
