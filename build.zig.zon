@@ -18,7 +18,7 @@
             .hash = "1220727ae90b421da0d3e09aa9449a55eff672fdab47f62dd661dc1b5634ea78b56a",
         },
         .compile_commands = .{
-            .url = "https://github.com/the-argus/zig-compile-commands/archive/95c8fa158e350d505b55a87a59cc4836e9606032.tar.gz",
+            .url = "https://github.com/the-argus/zig-compile-commands/archive/b73e8bdeb1266ea01b249387cabb39aad49f35d1.tar.gz",
             .hash = "1220b92b277b33762a10b4f239edddfbe9aadd53af88c678f94443b0d2312d9526fa",
         },
     },
