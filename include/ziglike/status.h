@@ -12,10 +12,9 @@ template <typename Errcode> struct status
   public:
     static_assert(
         std::is_enum_v<Errcode> && sizeof(Errcode) == 1 &&
-            typename std::underlying_type<Errcode>::type(Errcode::Okay) == 0 &&
-            (typename std::underlying_type<Errcode>::type(
-                 Errcode::ResultReleased) !=
-             typename std::underlying_type<Errcode>::type(Errcode::Okay)),
+            std::underlying_type_t<Errcode>(Errcode::Okay) == 0 &&
+            (std::underlying_type_t<Errcode>(Errcode::ResultReleased) !=
+             std::underlying_type_t<Errcode>(Errcode::Okay)),
         "Bad enum errorcode type provided to status_t. Make sure it is only a "
         "byte in size, and that the Okay entry is = 0.");
 

@@ -10,7 +10,7 @@ namespace zl {
 template <typename Callable> class defer
 {
     Callable* statement;
-    static_assert(std::is_invocable_r<void, Callable>::value,
+    static_assert(std::is_invocable_r_v<void, Callable>,
                   "Callable is not invocable with no arguments, and/or it does "
                   "not return void.");
     // static_assert(!(detail::is_instance<Callable, std::function>{}),

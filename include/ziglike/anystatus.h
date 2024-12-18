@@ -47,10 +47,9 @@ struct anystatus
     inline constexpr anystatus(
         typename std::enable_if_t<
             std::is_enum_v<Code> && sizeof(Code) == 1 &&
-                typename std::underlying_type<Code>::type(Code::Okay) == 0 &&
-                (typename std::underlying_type<Code>::type(
-                     Code::ResultReleased) !=
-                 typename std::underlying_type<Code>::type(Code::Okay)),
+                std::underlying_type_t<Code>(Code::Okay) == 0 &&
+                (std::underlying_type_t<Code>(Code::ResultReleased) !=
+                 std::underlying_type_t<Code>(Code::Okay)),
             Code>
             status) ZIGLIKE_NOEXCEPT
     {

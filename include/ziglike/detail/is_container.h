@@ -34,12 +34,12 @@ class is_container<
         -> decltype(std::declval<U>().size(), std::true_type());
 
     static constexpr bool has_data =
-        std::is_same<decltype(test<T>(0)), std::true_type>::value
+        std::is_same_v<decltype(test<T>(0)), std::true_type>
         //&& std::is_pointer_v<decltype(std::declval<T>().data())>
         ;
 
     static constexpr bool has_size =
-        std::is_same<decltype(size_test<T>(0)), std::true_type>::value
+        std::is_same_v<decltype(size_test<T>(0)), std::true_type>
         //&& std::is_same_v<decltype(std::declval<T>().size()), size_t>
         ;
 

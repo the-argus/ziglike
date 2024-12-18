@@ -21,7 +21,7 @@ template <typename T, typename StatusCode> class res
 {
   public:
     static_assert(
-        std::is_lvalue_reference<T>::value ||
+        std::is_lvalue_reference_v<T> ||
             (std::is_nothrow_destructible_v<T> &&
              // type must be either moveable or trivially copyable, otherwise it
              // cant be returned from/moved out of a function
@@ -33,11 +33,9 @@ template <typename T, typename StatusCode> class res
 
     static_assert(
         std::is_enum_v<StatusCode> && sizeof(StatusCode) == 1 &&
-            typename std::underlying_type<StatusCode>::type(StatusCode::Okay) ==
-                0 &&
-            (typename std::underlying_type<StatusCode>::type(
-                 StatusCode::ResultReleased) !=
-             typename std::underlying_type<StatusCode>::type(StatusCode::Okay)),
+            std::underlying_type_t<StatusCode>(StatusCode::Okay) == 0 &&
+            (std::underlying_type_t<StatusCode>(StatusCode::ResultReleased) !=
+             std::underlying_type_t<StatusCode>(StatusCode::Okay)),
         "Bad enum errorcode type provided to res. Make sure it is only a "
         "byte in size, and that the Okay entry is = 0.");
 
@@ -51,11 +49,11 @@ template <typename T, typename StatusCode> class res
         inline constexpr wrapper(T item) ZIGLIKE_NOEXCEPT : item(item){};
     };
 
-    static constexpr bool is_reference = std::is_lvalue_reference<T>::value;
+    static constexpr bool is_reference = std::is_lvalue_reference_v<T>;
 
     union raw_optional
     {
-        typename std::conditional<is_reference, wrapper, T>::type some;
+        std::conditional_t<is_reference, wrapper, T> some;
         uint8_t none;
         ~raw_optional() ZIGLIKE_NOEXCEPT {}
     };
@@ -86,7 +84,7 @@ template <typename T, typename StatusCode> class res
     /// Return a copy of the internal contents of the result. If this result is
     /// an error, this aborts the program. Check okay() before calling this
     /// function.
-    [[nodiscard]] inline typename std::conditional<is_reference, T, T&&>::type
+    [[nodiscard]] inline std::conditional_t<is_reference, T, T&&>
     release() ZIGLIKE_NOEXCEPT
     {
         if (!okay()) [[unlikely]] {
