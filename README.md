@@ -1,4 +1,9 @@
-# ziglike
+# ARCHIVED
+
+Ziglike is archived. This code has been greatly improved and is now found in
+[okaylib](https://github.com/the-argus/okaylib). Okaylib is better tested, more
+performant (opt and res types are actually constexpr and trivial whenever possible)
+and provides far more features.
 
 Some reimplementations of the Zig error union and optional types for C++ 17 and up.
 
